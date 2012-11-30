@@ -7,7 +7,7 @@ sourceFolder = path.resolve(__dirname, '../src')
 requireSrc = (pathToFile) -> require(path.resolve(sourceFolder, pathToFile))
 
 SqlFormatter = requireSrc('dialects/sql-formatter')
-ezekiel = requireSrc('ezekiel')
+ezekiel = requireSrc()
 Database = requireSrc('db/database')
 
 debug = false
