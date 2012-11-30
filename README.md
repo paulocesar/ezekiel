@@ -1,4 +1,4 @@
 ezekiel
 =======
 
-Easy, high performance SQL in Node.js
+Easy, high-performance SQL in Node.js
