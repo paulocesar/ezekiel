@@ -1,0 +1,11 @@
+{
+    "databases": {
+        "mssql": {
+            "engine": "mssql",
+            "host": "",
+            "userName": "sa",
+            "password": "",
+            "database": "TestDb"
+        }
+    }
+}
