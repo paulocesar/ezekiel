@@ -1,0 +1,11 @@
+{
+    "mssql" : {
+        "adapter": "tds",
+        "dialect": "tsql"
+    },
+
+    "mysql": {
+        "adapter": "mysql",
+        "dialect": "mysql"
+    }
+}

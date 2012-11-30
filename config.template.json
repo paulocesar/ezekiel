@@ -1,0 +1,41 @@
+{
+    "development": {
+        "database": {
+            "mssql": {
+                "engine": "mssql",
+                "host": "DATABASE_HOST",
+                "port": "DATABASE_PORT",
+                "userName": "DATABASE_USER",
+                "password": "DATABASE_PASSWORD",
+                "database": "DATABASE_NAME"
+            }
+        }
+    },
+    "test": {
+        "database": {
+            "mssql": {
+                "engine": "mssql",
+                "host": "DATABASE_HOST",
+                "port": "1433",
+                "userName": "DATABASE_USER",
+                "password": "DATABASE_PASSWORD",
+                "database": "DATABASE_NAME"
+            }
+        }
+    },
+    "production": {
+        "database": {
+            "mssql": {
+                "engine": "mssql",
+                "host": "DATABASE_HOST",
+                "port": "1433",
+                "userName": "DATABASE_USER",
+                "password": "DATABASE_PASSWORD",
+                "database": "DATABASE_NAME"
+            }
+        }
+    },
+    "all": {
+        
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "name": "ezekiel",
+    "description": "Easy, high-performance SQL in Node.js",
+    "version": "0.0.1",
+    "private": false,
+    "dependencies": {
+        "tds": "git://github.com/cretz/node-tds.git",
+        "underscore": "",
+        "mocha": "",
+        "coffee-script": "",
+        "should": "",
+        "async": "",
+        "generic-pool": "",
+        "tedious": ""
+    }
+}
