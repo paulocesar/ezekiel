@@ -7,8 +7,11 @@ poolModule = require('generic-pool')
 
 class TediousAdapter
     constructor: (config) ->
-        @config = _.clone(config)
-        @config.database ?= 'master'
+        @config = { options: {} }
+        @config.userName = config.userName
+        @config.password = config.password
+        @config.server = config.host
+        @config.options.database = config.database
 
         @pool = poolModule.Pool({
             name: 'tedious'
