@@ -41,13 +41,16 @@ class AliasedObject extends DbObject
         @alias ?= @name
 
     updateIndexedProperty: (siblings, prop, newValue) ->
+        oldValue = @[prop]
+        if (oldValue == newValue)
+            return
+
         clash = siblings[newValue]
         if clash?
             msg = "Can't change #{@} to new #{prop.substring(1)} '#{newValue}' " +
                 "because it is already taken by #{clash}"
             throw new Error(msg)
 
-        oldValue = @[prop]
         delete siblings[oldValue] if oldValue?
         siblings[newValue] = @
         @[prop] = newValue
