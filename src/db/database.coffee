@@ -64,6 +64,7 @@ class Database extends DbObject
 
     loadSchema: (schema) ->
         @addSchemaItems(Table, schema.tables, @)
+        @tables = _.sortBy(@tables, (t) -> t.alias)
         @addSchemaItems(Column, schema.columns)
         @addSchemaItems(Key, schema.keys)
         @addSchemaItems(ForeignKey, schema.foreignKeys)
