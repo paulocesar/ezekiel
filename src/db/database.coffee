@@ -17,16 +17,21 @@ class Database extends DbObject
     run: (stmt, callback) ->
         @execute(stmt, { onDone: () -> callback(null) }, callback)
 
-    scalar: (query, callback) ->
+    scalar: (query, callback) -> @_selectOneRow(query, 'array')
+
+    oneRow: (stmt, callback) -> @_selectOneRow(query, 'object')
+
+    _selectOneRow: (query, rowShape) ->
         opt = {
-            rowShape: 'array'
+            rowShape: rowShape
             onAllRows: (rows) ->
                 if (rows.length != 1)
                     e = "Expected query #{query} to return 1 row, " +
                         "but it returned #{rows.length} rows."
                     callback(e)
 
-                callback(null, rows[0][0])
+                v = (if rowShape == 'array' then rows[0][0] else rows[0])
+                callback(null, v)
         }
         @execute(query, opt, callback)
 
