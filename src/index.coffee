@@ -41,3 +41,4 @@ e = ezekiel = {
 }
 
 module.exports = ezekiel
+ezekiel.sql = require('./sql')

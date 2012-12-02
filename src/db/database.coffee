@@ -14,26 +14,26 @@ class Database extends DbObject
 
         @adapter = @utils = null
 
-    run: (stmt, callback) ->
-        @execute(stmt, { onDone: () -> callback(null) }, callback)
+    run: (stmt, cb) ->
+        @execute(stmt, { onDone: () -> cb(null) }, cb)
 
-    scalar: (query, callback) -> @_selectOneRow(query, 'array')
+    scalar: (query, cb) -> @_selectOneRow(query, 'array', cb)
 
-    oneRow: (stmt, callback) -> @_selectOneRow(query, 'object')
+    oneRow: (query, cb) -> @_selectOneRow(query, 'object', cb)
 
-    _selectOneRow: (query, rowShape) ->
+    _selectOneRow: (query, rowShape, cb) ->
         opt = {
             rowShape: rowShape
             onAllRows: (rows) ->
                 if (rows.length != 1)
                     e = "Expected query #{query} to return 1 row, " +
                         "but it returned #{rows.length} rows."
-                    callback(e)
+                    cb(e)
 
                 v = (if rowShape == 'array' then rows[0][0] else rows[0])
-                callback(null, v)
+                cb(null, v)
         }
-        @execute(query, opt, callback)
+        @execute(query, opt, cb)
 
     _generateSql: (o) ->
         if (o.stmt instanceof SqlToken)
