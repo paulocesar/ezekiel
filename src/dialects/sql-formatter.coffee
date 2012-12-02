@@ -1,4 +1,4 @@
-_ = require('underscore')
+_ = require('more-underscore/src')
 sql = require('../sql')
 { SqlPredicate, SqlToken, SqlSelect, SqlExpression, SqlRawName, SqlFullName } = sql
 
@@ -64,12 +64,9 @@ class SqlFormatter
 
     delimit: (s) -> "[#{s}]"
 
-    _firstOrSelf: (o) -> if _.isArray(o) then o[0] else o
-    _secondOrNull: (o) -> if _.isArray(o) then o[1] else null
-
     column: (c) ->
-        atom = @_firstOrSelf(c)
-        alias = @_secondOrNull(c)
+        atom = _.firstOrSelf(c)
+        alias = _.secondOrNull(c)
         return @_doColumn(atom, alias, true)
 
     _doColumn: (atom, alias, addAlias = false) ->
@@ -208,8 +205,8 @@ class SqlFormatter
     grouping: (atom) -> @_doColumn(atom)
 
     ordering: (o) ->
-        s = @_doColumn(@_firstOrSelf(o))
-        dir = if @_secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
+        s = @_doColumn(_.firstOrSelf(o))
+        dir = if _.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
 
         "#{s} #{dir}"
 

@@ -1,4 +1,4 @@
-_ = require('underscore')
+_ = require('more-underscore/src')
 async = require('async')
 DbUtils = require('../db-utils')
 

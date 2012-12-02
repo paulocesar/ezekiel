@@ -1,4 +1,4 @@
-_ = require('underscore')
+_ = require('more-underscore/src')
 
 class DbObject
     constructor: (schema) ->
@@ -75,6 +75,7 @@ class Table extends AliasedObject
         @columnsByName = {}
         @columnsByAlias = {}
 
+        @pk = null
         @keys = []
         @foreignKeys = []
         @incomingFKs = []
@@ -101,6 +102,7 @@ class Column extends AliasedObject
 
     siblingsByName: () -> @table.columnsByName
     siblingsByAlias: () -> @table.columnsByAlias
+    isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
 
 class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']
@@ -125,6 +127,8 @@ class Key extends Constraint
     constructor: (@table, schema) ->
         super(@table, schema)
         @table.keys.push(@)
+        if @type == 'PRIMARY KEY'
+            @table.pk = @
 
 class ForeignKey extends Constraint
     constructor: (@table, schema) ->

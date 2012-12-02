@@ -1,4 +1,4 @@
-_ = require('underscore')
+_ = require('more-underscore/src')
 
 sql = {
     rgxExpression: /[()\+\*\-/]/

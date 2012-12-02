@@ -6,8 +6,8 @@ should = require('should')
 testDb = null
 withDbAndSchema = (f) -> f(h.blankDb(), h.newSchema())
 
-describe('Database loadSchema()', () ->
-    before((done) ->
+describe('Database schema handling', () ->
+    it('Can load schema from a database', (done) ->
         h.connectToDb((freshDb) ->
             testDb = freshDb
 
@@ -56,24 +56,41 @@ describe('Database loadSchema()', () ->
     )
 
     it('Throws if a name clashes', ->
-        h.schemaDb((db) ->
-            clash = () -> db.tablesByName.Customers.name = 'Orders'
-            clash.should.throw(/it is already taken/)
-        )
+        db = h.schemaDb()
+        clash = () -> db.tablesByName.customers.name = 'orders'
+        clash.should.throw(/it is already taken/)
     )
 
     it('Throws if an alias clashes', ->
-        h.schemaDb((db) ->
-            clash = () -> db.tablesByName.Customers.alias = 'Orders'
-            clash.should.throw(/it is already taken/)
-        )
+        db = h.schemaDb()
+        clash = () -> db.tablesByName.customers.alias = 'orders'
+        clash.should.throw(/it is already taken/)
     )
 
-    it('Keeps aliases hash tidy', ->
+    it('Keeps the aliases hash tidy', ->
         a = h.aliasedDb().tablesByAlias
         Object.keys(a).sort().should.eql(['customer', 'order'])
 
         a.customer.alias = 'cust'
         Object.keys(a).sort().should.eql(['cust', 'order'])
+    )
+
+    it('Knows if a column is the full primary key', ->
+        db = h.schemaDb()
+        c = db.tablesByAlias.customers
+        c.columnsByAlias.id.isFullPrimaryKey().should.be.true
+    )
+
+    it('Knows that a column in a composite PK is not the full PK', ->
+        withDbAndSchema((db, s) ->
+            s.keyColumns.push({
+                columnName: 'id', tableName: 'customers', position: 2,
+                constraintName: 'PK_Customers'
+            })
+
+            db.loadSchema(s)
+            c = db.tablesByAlias.customers
+            c.columnsByAlias.id.isFullPrimaryKey().should.be.false
+        )
     )
 )

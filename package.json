@@ -5,7 +5,7 @@
     "private": false,
     "dependencies": {
         "tds": "git://github.com/cretz/node-tds.git",
-        "underscore": "",
+        "more-underscore": "git://github.com/gduarte/more-underscore.git",
         "mocha": "",
         "coffee-script": "",
         "should": "",

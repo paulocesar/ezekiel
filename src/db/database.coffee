@@ -1,4 +1,4 @@
-_ = require('underscore')
+_ = require('more-underscore/src')
 
 dbObjects = require('./index')
 { DbObject, Table, Column, Key, ForeignKey } = dbObjects

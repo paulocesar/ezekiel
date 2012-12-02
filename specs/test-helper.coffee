@@ -23,9 +23,13 @@ newSchema = () -> {
         { tableName: 'customers', name: 'id', position: 1 }
         { tableName: 'customers', name: 'firstName', position: 2 }
     ]
-    keys: []
+    keys: [
+        { type: 'PRIMARY KEY', tableName: 'customers', name: 'PK_Customers' }
+    ]
     foreignKeys: []
-    keyColumns: []
+    keyColumns: [
+        { columnName: 'id', tableName: 'customers', position: 1, constraintName: 'PK_Customers' }
+    ]
 }
 
 newAliasedSchema = () -> {
