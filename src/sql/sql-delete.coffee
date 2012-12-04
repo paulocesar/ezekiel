@@ -1,4 +1,4 @@
-_ = require("underscore")
+_ = require("more-underscore/src")
 { SqlPredicate, SqlRawName, SqlFilteredStatement } = sql = require('./index')
 
 class SqlDelete extends SqlFilteredStatement

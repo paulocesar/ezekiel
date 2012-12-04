@@ -1,4 +1,4 @@
-_ = require("underscore")
+_ = require("more-underscore/src")
 { SqlPredicate, SqlRawName, SqlStatement } = sql = require('./index')
 
 class SqlInsert extends SqlStatement
