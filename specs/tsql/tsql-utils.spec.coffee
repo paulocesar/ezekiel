@@ -67,7 +67,8 @@ describe('TsqlUtils', () ->
     it 'should retrieve SQL options', (done) ->
         utils.getOptions (err, opt) ->
             return done(err) if err
-            console.log(opt)
+            opt.should.eql([ 'ANSI_WARNINGS', 'ANSI_PADDING', 'ANSI_NULLS', 'ARITHABORT',
+                'QUOTED_IDENTIFIER', 'ANSI_NULL_DFLT_ON', 'CONCAT_NULL_YIELDS_NULL' ])
             done()
 
 )
