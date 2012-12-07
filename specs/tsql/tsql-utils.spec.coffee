@@ -64,9 +64,15 @@ describe('TsqlUtils', () ->
         )
     )
 
+    it 'should retrieve SQL options', (done) ->
+        utils.getOptions (err, opt) ->
+            return done(err) if err
+            console.log(opt)
+            done()
+
 )
 
-describe('utils functions', () ->
+describe('Schema functions', () ->
     it('reads tables', (done) ->
         utils.getTables((err, tables) ->
             checkTables(tables)

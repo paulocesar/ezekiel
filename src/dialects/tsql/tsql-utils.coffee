@@ -10,6 +10,29 @@ class TsqlUtils extends DbUtils
             dbUtcOffset: "SELECT DATEDIFF(mi, GETUTCDATE(), GETDATE())"
         }
 
+    getOptions: (cb) ->
+        @db.scalar 'SELECT @@OPTIONS', (err, r) ->
+            return cb(err) if err
+
+            opt = []
+            opt.push('DISABLE_DEF_CNST_CHK') if (1 & r)
+            opt.push('IMPLICIT_TRANSACTIONS') if (2 & r)
+            opt.push('CURSOR_CLOSE_ON_COMMIT') if (4 & r)
+            opt.push('ANSI_WARNINGS') if (8 & r)
+            opt.push('ANSI_PADDING') if (16 & r)
+            opt.push('ANSI_NULLS') if (32 & r)
+            opt.push('ARITHABORT') if (64 & r)
+            opt.push('ARITHIGNORE') if (128 & r)
+            opt.push('QUOTED_IDENTIFIER') if (256 & r)
+            opt.push('NOCOUNT') if (512 & r)
+            opt.push('ANSI_NULL_DFLT_ON') if (1024 & r)
+            opt.push('ANSI_NULL_DFLT_OFF') if (2048 & r)
+            opt.push('CONCAT_NULL_YIELDS_NULL') if (4096 & r)
+            opt.push('NUMERIC_ROUNDABORT') if (8192 & r)
+            opt.push('XACT_ABORT') if (16384 & r)
+
+            cb(null, opt)
+
     getTables: (callback) ->
         query =
             "SELECT TABLE_NAME name FROM INFORMATION_SCHEMA.TABLES

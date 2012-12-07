@@ -21,6 +21,15 @@ describe('Database', () ->
         )
     )
 
+    it('should execute a simple query as scalar', (done) ->
+        query = "SELECT 42"
+        database.scalar(query, (err, r) ->
+            done(err) if err
+            r.should.eql(42)
+            done()
+        )
+    )
+
     it('should get query rows', (done) ->
         stmt = "SELECT 1 AS test"
         database.allRows(stmt, (err, data) ->

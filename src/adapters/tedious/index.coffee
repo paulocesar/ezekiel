@@ -25,7 +25,12 @@ class TediousAdapter
             if (err)
                 callback(err)
             else
-                callback(null, conn)
+                # MUST: find a real solution instead of this godawful workaround
+                request = new Request('SET ANSI_PADDING ON SET ANSI_WARNINGS ON SET ANSI_NULLS ON SET ARITHABORT ON SET QUOTED_IDENTIFIER ON SET ANSI_NULL_DFLT_ON ON SET CONCAT_NULL_YIELDS_NULL ON', (err, rowCount) ->
+                    return callback(err) if err
+                    callback(null, conn)
+                )
+                conn.execSqlBatch(request)
         )
 
     execute: (options) ->
@@ -79,7 +84,7 @@ class TediousAdapter
                     return
                 )
                 
-            conn.execSql(request)
+            conn.execSqlBatch(request)
         )
 
 
