@@ -26,10 +26,15 @@ class TediousAdapter
                 callback(err)
             else
                 # MUST: find a real solution instead of this godawful workaround
-                request = new Request('SET ANSI_PADDING ON SET ANSI_WARNINGS ON SET ANSI_NULLS ON SET ARITHABORT ON SET QUOTED_IDENTIFIER ON SET ANSI_NULL_DFLT_ON ON SET CONCAT_NULL_YIELDS_NULL ON', (err, rowCount) ->
+                set = 'SET ANSI_PADDING ON SET ANSI_WARNINGS ON ' +
+                        'SET ANSI_NULLS ON SET ARITHABORT ON SET QUOTED_IDENTIFIER ON ' +
+                        'SET ANSI_NULL_DFLT_ON ON SET CONCAT_NULL_YIELDS_NULL ON'
+
+                request = new Request(set , (err, rowCount) ->
                     return callback(err) if err
                     callback(null, conn)
                 )
+
                 conn.execSqlBatch(request)
         )
 
