@@ -67,9 +67,9 @@ class SqlFormatter
     column: (c) ->
         atom = _.firstOrSelf(c)
         alias = _.secondOrNull(c)
-        return @_doColumn(atom, alias, true)
+        return @_doAtom(atom, alias, true)
 
-    _doColumn: (atom, alias, addAlias = false) ->
+    _doAtom: (atom, alias, addAlias = false) ->
         token = @tokenizeAtom(atom)
         model = @findColumnModel(token)
         s = @_doToken(token, model)
@@ -109,7 +109,7 @@ class SqlFormatter
 
 
     relop: (left, op, right) ->
-        l = @_doColumn(left)
+        l = @_doAtom(left)
         
         # MUST: replace with data driven approach
         op = op.toUpperCase()
@@ -203,10 +203,10 @@ class SqlFormatter
 
     orderBy: (c) -> @doList(c.orderings, @ordering, ', ', ' ORDER BY ')
 
-    grouping: (atom) -> @_doColumn(atom)
+    grouping: (atom) -> @_doAtom(atom)
 
     ordering: (o) ->
-        s = @_doColumn(_.firstOrSelf(o))
+        s = @_doAtom(_.firstOrSelf(o))
         dir = if _.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
 
         "#{s} #{dir}"
