@@ -183,7 +183,11 @@ class SqlFormatter
         @addTables(sql.tables)
         @addTables(sql.joins)
 
-        ret = "SELECT #{@columns(sql.columns)} FROM #{@tables(sql.tables)}"
+        ret = "SELECT "
+        if (sql.cntTake)
+            ret += "TOP #{sql.cntTake} "
+
+        ret += "#{@columns(sql.columns)} FROM #{@tables(sql.tables)}"
 
         ret += @joins(sql.joins)
         ret += @where(sql)
