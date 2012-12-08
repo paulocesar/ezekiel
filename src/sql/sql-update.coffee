@@ -24,7 +24,7 @@ _.extend(sql, {
     update: (t) -> new SqlUpdate(t)
     updateExpr: (column, value) -> new SqlUpdateExpression(column, value)
 
-    SqlUpdate: SqlUpdate
+    SqlUpdate
 })
 
 module.exports = SqlUpdate

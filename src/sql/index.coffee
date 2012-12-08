@@ -167,18 +167,19 @@ class SqlFilteredStatement extends SqlStatement
 module.exports = sql
 
 _.extend(sql, {
-    SqlToken: SqlToken
-    SqlExpression: SqlExpression
-    SqlRawName: SqlRawName
-    SqlFullName: SqlFullName
-    SqlPredicate: SqlPredicate
-    SqlAnd: SqlAnd
-    SqlOr: SqlOr
-    SqlStatement: SqlStatement
-    SqlFilteredStatement: SqlFilteredStatement
+    SqlToken
+    SqlExpression
+    SqlRawName
+    SqlFullName
+    SqlPredicate
+    SqlAnd
+    SqlOr
+    SqlStatement
+    SqlFilteredStatement
 })
 
 require('./sql-select')
 require('./sql-insert')
 require('./sql-delete')
 require('./sql-update')
+require('./sql-operators')
