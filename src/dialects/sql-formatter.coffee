@@ -199,11 +199,9 @@ class SqlFormatter
         return " WHERE #{(c.whereClause.toSql(@))}" if (c.whereClause?)
         return ""
 
-    groupBy: (c) -> @doList(c.groupings, @grouping, ', ', ' GROUP BY ')
+    groupBy: (c) -> @doList(c.groupings, @_doAtom, ', ', ' GROUP BY ')
 
     orderBy: (c) -> @doList(c.orderings, @ordering, ', ', ' ORDER BY ')
-
-    grouping: (atom) -> @_doAtom(atom)
 
     ordering: (o) ->
         s = @_doAtom(_.firstOrSelf(o))
