@@ -99,9 +99,6 @@ class SqlFormatter
         if model?
             return model.alias
 
-        if token instanceof SqlFullName
-            return token.tip()
-
         return null
 
     _doAliasedExpression: (token, model, alias) ->
