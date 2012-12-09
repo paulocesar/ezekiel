@@ -7,7 +7,7 @@ class SqlDelete extends SqlFilteredStatement
 
 
 _.extend(sql, {
-    delete: (t) -> new SqlDelete(t)
+    delete: (t, predicate) -> new SqlDelete(t, predicate)
     SqlDelete: SqlDelete
 })
 

@@ -78,7 +78,7 @@ class SqlFormatter
 
     _doAtom: (atom, alias, addAlias = false) ->
         token = @tokenizeAtom(atom)
-        model = @findColumnModel(token)
+        model = @_findColumnSchema(token)
         s = @_doToken(token, model)
 
         if addAlias
@@ -147,14 +147,14 @@ class SqlFormatter
                 r = @_doPatternMatch(right, '%')
             else
                 rightToken = @parseWhenRawName(right)
-                model = @findColumnModel(rightToken)
+                model = @_findColumnSchema(rightToken)
                 r = @_doToken(rightToken, model)
 
         return "#{l} #{sqlOp} #{r}"
 
     _doPatternMatch: (rhs, prologue = '', epilogue = '') ->
         t = @parseWhenRawName(rhs)
-        model = @findColumnModel(t)
+        model = @_findColumnSchema(t)
 
         if sql.isLiteral(t)
             p = _.undelimit(@f(rhs), "''")
@@ -220,16 +220,22 @@ class SqlFormatter
 
     cacheTokenFor: (e) -> e._token = @tokenizeAtom(e.atom)
 
-    findColumnModel: (name) ->
-        unless name instanceof SqlFullName
+    _findTableSchema: (token) ->
+        unless token instanceof SqlFullName
+            return null
+
+        return @db.tablesByAlias[token.tip()] ? null
+
+    _findColumnSchema: (token) ->
+        unless token instanceof SqlFullName
             return
 
-        table = name.prefix()
+        table = token.prefix()
         if table?
-            return @db.tablesByAlias[table]?.columnsByAlias[name.tip()]
+            return @db.tablesByAlias[table]?.columnsByAlias[token.tip()]
 
         for t in @sources when t._model?
-            column = t._model.columnsByAlias[name.tip()]
+            column = t._model.columnsByAlias[token.tip()]
             if column?
                 return column
 
@@ -238,8 +244,7 @@ class SqlFormatter
             s = if o instanceof type then o else new type(o)
             @sources.push(s)
             token = @cacheTokenFor(s)
-            s._model =
-                if token instanceof SqlFullName then @db.tablesByAlias[token.tip()] else null
+            s._model = @_findTableSchema(token)
 
     _deductJoinPredicates: ->
         cnt = 1
@@ -308,19 +313,25 @@ class SqlFormatter
 
         "#{s} #{dir}"
 
+    _doTargetTable: (name) ->
+        fullName = @parseWhenRawName(name)
+        schema = @_findTableSchema(fullName)
+        return @_doToken(fullName, schema)
+
     insert: (i) ->
-        return "INSERT #{@f(i.targetTable)}"
+        return "INSERT #{@_doTargetTable(i.targetTable)}"
 
     update: (u) ->
-        ret = "UPDATE #{@f(u.targetTable)} SET "
-        ret += @doList(u.exprs)
+        ret = "UPDATE #{@_doTargetTable(u.targetTable)} SET "
+
+        values = ("#{@_doAtom(k)} = #{@f(v)}" for k, v of u.values)
+        ret += values.join(', ')
+
         ret += @where(u)
         return ret
 
-    updateExpr: (e) -> "#{@f(e.column)} = #{@f(e.value)}"
-
     delete: (d) ->
-        ret = "DELETE FROM #{@f(d.targetTable)}"
+        ret = "DELETE FROM #{@_doTargetTable(d.targetTable)}"
         ret += @where(d)
         return ret
 

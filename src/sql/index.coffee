@@ -161,11 +161,12 @@ class SqlOr extends SqlBooleanOp
 class SqlStatement extends SqlToken
     constructor: (table) ->
         @targetTable = sql.name(table)
-        @init()
-
-    init: () ->
 
 class SqlFilteredStatement extends SqlStatement
+    constructor: (table, predicate) ->
+        super(table)
+        @where(predicate) if predicate?
+
     where: (terms...) ->
         @whereClause = SqlPredicate.addOrCreate(@whereClause, terms)
         return @

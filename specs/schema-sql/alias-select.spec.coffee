@@ -1,6 +1,5 @@
 h = require('../test-helper')
 sql = h.requireSrc('sql')
-SqlFormatter = h.requireSrc('dialects/sql-formatter')
 
 describe('SqlSelect with aliased schema', () ->
     it('Has the right aliases in place', ->
