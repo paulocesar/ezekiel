@@ -243,10 +243,12 @@ class SqlFormatter
 
     _deductJoinPredicates: ->
         cnt = 1
-        while cnt == null || cnt > 0
+        while cnt > 0
             cnt = 0
             for j in @sources when j instanceof SqlJoin && j.predicate == null
                 cnt++ if @_buildJoinPredicate(j)
+
+        # SHOULD: throw if there are still unresolved JOINS
         return
 
     _buildJoinPredicate: (j) ->
@@ -263,9 +265,7 @@ class SqlFormatter
                     s._model == fk.parentTable && (s instanceof SqlFrom || s.predicate?)
 
 
-        if (candidates.length == 0)
-            msg = "Can't find suitable parent to adopt #{j}"
-            throw new Error(msg)
+        return false if (candidates.length == 0)
 
         # SHOULD: get smarter about picking which PK to use
         pk = candidates[0]
