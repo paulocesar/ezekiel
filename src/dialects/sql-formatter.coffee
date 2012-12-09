@@ -255,9 +255,7 @@ class SqlFormatter
         ret += @orderBy(sql)
         return ret
 
-    where: (c) ->
-        return " WHERE #{(c.whereClause.toSql(@))}" if (c.whereClause?)
-        return ""
+    where: (c) -> if c.whereClause? then " WHERE #{(c.whereClause.toSql(@))}"  else ''
 
     groupBy: (c) -> @doList(c.groupings, @_doAtom, ', ', ' GROUP BY ')
 
