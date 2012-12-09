@@ -73,9 +73,14 @@ describe('SQL Operators', () ->
         q = sql.from('customers').where(firstName: sql.isNull, lastName: sql.isGood)
         h.assertSql(q, e)
 
-    it 'properly supports columns as patterns in pattern match operators', ->
+    it 'supports columns as patterns in pattern match operators', ->
         q = sql.from('customers').where(firstName: sql.contains(sql.name('lastName')))
         e = "SELECT * FROM [customers] WHERE [firstName] LIKE '%' + [lastName] + '%'"
+        h.assertSql(q, e)
+
+    it 'aliases != to <>', ->
+        q = sql.from('customers').where(firstName: { '!=': 'Neville' })
+        e = "SELECT * FROM [customers] WHERE [firstName] <> 'Neville'"
         h.assertSql(q, e)
         
 )
