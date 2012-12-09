@@ -5,6 +5,6 @@ SqlFormatter = h.requireSrc('dialects/sql-formatter')
 
 describe('SqlInsert', () ->
     it('works for a basic statement', ->
-        h.assertSql(sql.insert("MyTable"), 'INSERT [MyTable]', false)
+        h.assertSql(sql.insert("MyTable"), 'INSERT [MyTable] () VALUES ()', false)
     )
 )

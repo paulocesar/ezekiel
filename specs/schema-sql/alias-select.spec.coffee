@@ -17,8 +17,10 @@ describe('SqlSelect with aliased schema', () ->
 
     it('Handles SQL prefixes', ->
         s = sql.select('customer.CustomerId', 'CustomerFirstName').from('customer')
-        expected = "SELECT [customer].[id] as [CustomerId], [FirstName] as [CustomerFirstName] FROM " +
-            "[Customers] as [customer]"
+
+        expected = "SELECT [customer].[id] as [CustomerId], [FirstName] as " +
+             "[CustomerFirstName] FROM [Customers] as [customer]"
+
         h.assertAlias(s, expected)
     )
 

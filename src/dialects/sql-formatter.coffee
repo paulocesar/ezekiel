@@ -316,10 +316,19 @@ class SqlFormatter
     _doTargetTable: (name) ->
         fullName = @parseWhenRawName(name)
         schema = @_findTableSchema(fullName)
+        @sources.push(_model: schema) if schema?
         return @_doToken(fullName, schema)
 
     insert: (i) ->
-        return "INSERT #{@_doTargetTable(i.targetTable)}"
+        ret = "INSERT #{@_doTargetTable(i.targetTable)}"
+        names = []
+        values = []
+        for k, v of i.values
+            names.push(@_doAtom(k))
+            values.push(@f(v))
+
+        ret += " (#{names.join(', ')}) VALUES (#{values.join(', ')})"
+
 
     update: (u) ->
         ret = "UPDATE #{@_doTargetTable(u.targetTable)} SET "

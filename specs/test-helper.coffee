@@ -40,6 +40,7 @@ newAliasedSchema = -> {
     columns: [
         { tableName: 'Customers', name: 'id', alias: 'CustomerId', position: 1 }
         { tableName: 'Customers', name: 'FirstName', alias: 'CustomerFirstName', position: 2 }
+        { tableName: 'Customers', name: 'LastName', alias: 'CustomerLastName', position: 3 }
     ]
     keys: []
     foreignKeys: []

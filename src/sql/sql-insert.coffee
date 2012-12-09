@@ -10,7 +10,7 @@ class SqlInsert extends SqlStatement
 _.extend(sql, {
     insert: (t, values) -> new SqlInsert(t, values)
 
-    SqlInsert: SqlInsert
+    SqlInsert
 })
 
 module.exports = SqlInsert
