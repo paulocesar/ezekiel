@@ -100,7 +100,7 @@ module.exports = {
     assertSchemaSql: (sql, expected, debug) -> assertSqlFormatting(schemaDb(), sql, expected, debug)
     assertAlias: (sql, expected, debug) -> assertSqlFormatting(aliasedDb(), sql, expected, debug)
 
-    inspect: (o) -> console.log(util.inspect(o, true, 5, true))
+    inspect: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
 
     getSharedDb: (engine = defaultEngine) -> sharedDb
     connectToDb: connectToDb

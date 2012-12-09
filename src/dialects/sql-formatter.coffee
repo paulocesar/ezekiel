@@ -1,6 +1,6 @@
 _ = require('more-underscore/src')
 sql = require('../sql')
-{ SqlPredicate, SqlToken, SqlSelect, SqlExpression, SqlRawName, SqlFullName } = sql
+{ SqlLiteral, SqlPredicate, SqlToken, SqlSelect, SqlExpression, SqlRawName, SqlFullName } = sql
 
 SqlIdentifier = SqlToken.SqlIdentifier
 
@@ -10,6 +10,15 @@ rgxParseName = ///
 ///g
 
 rgxExpression = /[()\+\*\-/]/
+rgxPatternMetaChars = /[%_[]/g
+
+operatorAliases = {
+    contains: 'LIKE'
+    startsWith: 'LIKE'
+    endsWith: 'LIKE'
+    equals: '='
+    '!=': '<>'
+}
 
 class SqlFormatter
     constructor: (@db) ->
@@ -107,26 +116,77 @@ class SqlFormatter
 
         return if a? then "#{e} as #{@delimit(a)}" else e
 
+    naryOp: (op, atoms) ->
+        switch op
+            when 'isNull'
+                pieces = ("#{@_doAtom(a)} IS NULL" for a in atoms)
+            when 'isntNull', 'isNotNull'
+                pieces = ("#{@_doAtom(a)} IS NOT NULL" for a in atoms)
+            when 'isGood'
+                pieces = []
+                for a in atoms
+                    s = @_doAtom(a)
+                    pieces.push("#{s} IS NOT NULL AND LEN(RTRIM(LTRIM(#{s}))) > 0")
 
-    relop: (left, op, right) ->
+        return pieces.join(' AND ')
+
+    binaryOp: (left, op, right) ->
         l = @_doAtom(left)
         
-        # MUST: replace with data driven approach
-        op = op.toUpperCase()
-        r = switch op
-            when 'IN' then "(#{@f(right)})"
-            when 'BETWEEN' then "#{@f(right[0])} AND #{@f(right[1])}"
+        sqlOp = operatorAliases[op] ? op.toUpperCase()
+        
+        switch op
+            when 'in' then r = "(#{@f(right)})"
+            when 'between' then r = "#{@f(right[0])} AND #{@f(right[1])}"
+            when 'contains'
+                r = @_doPatternMatch(right, '%', '%')
+            when 'startsWith'
+                r = @_doPatternMatch(right, '', '%')
+            when 'endsWith'
+                r = @_doPatternMatch(right, '%')
             else
                 rightToken = @parseWhenRawName(right)
                 model = @findColumnModel(rightToken)
                 r = @_doToken(rightToken, model)
 
-        return "#{l} #{op} #{r}"
+        return "#{l} #{sqlOp} #{r}"
 
-    doList: (collection, fn = @f, separator = ', ', prelude = '') ->
+    _doPatternMatch: (rhs, prologue = '', epilogue = '') ->
+        t = @parseWhenRawName(rhs)
+        model = @findColumnModel(t)
+
+        if sql.isLiteral(t)
+            p = _.undelimit(@f(rhs), "''")
+            p = @_escapePatternMetaChars(p)
+            return "'#{prologue}#{p}#{epilogue}'"
+        else
+            p = @_doToken(t)
+            if prologue
+                p = "'#{prologue}' + #{p}"
+            if epilogue
+                p = "#{p} + '#{epilogue}'"
+            return p
+
+    _escapePatternMetaChars: (s) -> s.replace(rgxPatternMetaChars, '[$&]')
+
+    functionCall: (call) ->
+        switch call.name
+            when 'now' then return 'GETDATE()'
+            when 'utcNow' then return 'GETUTCDATE()'
+            when 'trim'
+                prologue = "RTRIM(LTRIM("
+                epilogue = "))"
+            else
+                prologue = "#{call.name.toUpperCase()}("
+                epilogue = ")"
+
+        @doList(call.args, @_doAtom, ', ', prologue, epilogue)
+
+
+    doList: (collection, fn = @f, separator = ', ', prologue = '', epilogue = '') ->
         return '' unless collection?.length > 0
         results = (fn.call(@, i) for i in collection)
-        return prelude + results.join(separator)
+        return prologue + results.join(separator) + epilogue
 
     columns: (columnList) ->
         return "*" if (columnList.length == 0)

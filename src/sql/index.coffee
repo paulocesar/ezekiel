@@ -1,14 +1,10 @@
 _ = require('more-underscore/src')
 
 sql = {
-    rgxExpression: /[()\+\*\-/]/
-
-    nameOrExpr: (s) ->
-        return s if s instanceof SqlToken
-        if sql.rgxExpression.test(s) then sql.expr(s) else sql.name(s)
-
     verbatim: (s) -> new SqlVerbatim(s)
     predicate: (p...) -> new SqlPredicate(p)
+    literal: (o) -> new SqlLiteral(o)
+    isLiteral: (o) -> o instanceof SqlLiteral || !(o instanceof SqlToken)
 
     name: (n) ->
         return n if n instanceof SqlToken
@@ -63,22 +59,43 @@ class SqlParens extends SqlToken
     getChildren: -> [@contents]
     toSql: (f) -> f.parens(@contents)
 
-class SqlRelop extends SqlToken
-    if _.isString(left)
-        left = sql.nameOrExpr(left)
+class FunctionCall extends SqlToken
+    constructor: (@name, @args) ->
+    toSql: (f) -> f.functionCall(@)
 
-    @pushRelops: (left, right, relops = []) ->
+class BinaryOp extends SqlToken
+    @push: (left, right, ops = []) ->
+        # where( field: sql.isNull }
+        if _.isFunction(right)
+            right = right()
+
+        # where( field: [10, 20, 30] )
         if _.isArray(right)
-            relops.push(new SqlRelop(left, 'IN', right))
+            newbie = sql.in(left, right)
+        # where( field: { '>': 10, '<>': 15 } )
         else if _.isObject(right) && !(right instanceof SqlToken)
             for op, operand of right
-                relops.push(new SqlRelop(left, op, operand))
+                ops.push(new BinaryOp(left, op, operand))
+            return
+        # where( field: sql.startsWith('Radioh') )
+        else if right instanceof BinaryOp
+            newbie = new BinaryOp(left, right.op, right.right)
+        # where( field: sql.isNull() )
+        else if right instanceof NaryOp
+            newbie = new NaryOp(right.op, right.atoms.concat(left))
+        # where( field: 10 )
         else
-            relops.push(new SqlRelop(left, '=', right))
+            newbie = sql.equals(left, right)
+
+        ops.push(newbie)
 
     constructor: (@left, @op, @right) ->
     getChildren: -> [@left, @right]
-    toSql: (f) -> f.relop(@left, @op, @right)
+    toSql: (f) -> f.binaryOp(@left, @op, @right)
+
+class NaryOp extends SqlToken
+    constructor: (@op, @atoms) ->
+    toSql: (f) -> f.naryOp(@op, @atoms)
 
 class SqlPredicate extends SqlToken
     @wrap: (term) ->
@@ -91,10 +108,10 @@ class SqlPredicate extends SqlToken
         pieces = []
 
         if _.isArray(term)
-            SqlRelop.pushRelops(term[0], term[1], pieces)
+            BinaryOp.push(term[0], term[1], pieces)
         else if _.isObject(term)
             for k, v of term
-                SqlRelop.pushRelops(k, v, pieces)
+                BinaryOp.push(k, v, pieces)
 
         if (pieces.length > 0)
             return if pieces.length == 1 then pieces[0] else new SqlAnd(pieces)
@@ -176,6 +193,10 @@ _.extend(sql, {
     SqlOr
     SqlStatement
     SqlFilteredStatement
+    SqlLiteral
+    BinaryOp
+    NaryOp
+    FunctionCall
 })
 
 require('./sql-select')
@@ -183,3 +204,4 @@ require('./sql-insert')
 require('./sql-delete')
 require('./sql-update')
 require('./sql-operators')
+require('./sql-functions')
