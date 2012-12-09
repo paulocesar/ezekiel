@@ -16,9 +16,9 @@ class SqlFrom extends SqlAliasedExpression
     toSql: (f) -> f.from(@)
 
 class SqlJoin extends SqlFrom
-    constructor: (a, terms) ->
+    constructor: (a, predicate...) ->
         super(a)
-        @predicate = new SqlPredicate(terms)
+        @predicate = new SqlPredicate(predicate)
 
     toSql: (f) -> f.join(@)
 
@@ -54,15 +54,13 @@ class SqlSelect extends SqlStatement
         @cntTake = n
         return @
 
-    # SHOULD: get rid of SqlFrom and make it simple like columns, order by, and group by
     from: (table) ->
-        @addFrom(new SqlFrom(table), @tables)
+        @tables.push(table)
         return @
 
-    # SHOULD: allow joins to be simple strings with table names when nothing fancy is being done
-    join: (table, terms...) ->
-        @lastJoin = new SqlJoin(table, terms)
-        @addFrom(@lastJoin, @joins)
+    join: (j, clause) ->
+        join = if clause? then sql.join(j, clause) else j
+        @joins.push(join)
         return @
 
     where: (terms...) ->
@@ -108,8 +106,11 @@ _.extend(sql, {
         s.select(t...)
     
     from: (t) -> new SqlSelect(t)
+    join: (table, clause) -> new SqlJoin(table, clause)
 
-    SqlSelect: SqlSelect
+    SqlSelect
+    SqlJoin
+    SqlFrom
 })
 
 module.exports = SqlSelect

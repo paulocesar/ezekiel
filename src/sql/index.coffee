@@ -116,7 +116,7 @@ class SqlPredicate extends SqlToken
         if (pieces.length > 0)
             return if pieces.length == 1 then pieces[0] else new SqlAnd(pieces)
 
-        throw new Error("Unsupported predicate term: " + t.toString())
+        throw new Error("Unsupported predicate term: " + term.toString())
 
     @addOrCreate: (predicate, terms) ->
         if predicate?

@@ -1,8 +1,6 @@
 _ = require('more-underscore/src')
 sql = require('../sql')
-{ SqlLiteral, SqlPredicate, SqlToken, SqlSelect, SqlExpression, SqlRawName, SqlFullName } = sql
-
-SqlIdentifier = SqlToken.SqlIdentifier
+{ SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 
 rgxParseName = ///
     ( [^.]+ )   # anything that's not a .
@@ -22,7 +20,7 @@ operatorAliases = {
 
 class SqlFormatter
     constructor: (@db) ->
-        @modelTables = []
+        @sources = []
 
     f: (v) ->
         return v.toSql(@) if v instanceof SqlToken
@@ -192,9 +190,9 @@ class SqlFormatter
         return "*" if (columnList.length == 0)
         return @doList(columnList, @column)
 
-    tables: (tableList) -> @doList(tableList)
+    _doTables: -> @doList((s for s in @sources when !(s instanceof SqlJoin)))
 
-    joins: (joinList) -> @doList(joinList, @f, ' ')
+    _doJoins: -> @doList((j for j in @sources when j instanceof SqlJoin), @f, ' ')
 
     from: (f) ->
         token = f._token
@@ -217,7 +215,7 @@ class SqlFormatter
 
         return atom
 
-    cacheExpressionToken: (e) -> e._token = @tokenizeAtom(e.atom)
+    cacheTokenFor: (e) -> e._token = @tokenizeAtom(e.atom)
 
     findColumnModel: (name) ->
         unless name instanceof SqlFullName
@@ -227,29 +225,30 @@ class SqlFormatter
         if table?
             return @db.tablesByAlias[table]?.columnsByAlias[name.tip()]
 
-        for t in @modelTables
-            column = t.columnsByAlias[name.tip()]
+        for t in @sources when t._model?
+            column = t._model.columnsByAlias[name.tip()]
             if column?
                 return column
 
-    addTables: (a) ->
-        for t in a
-            token = @cacheExpressionToken(t)
-            if (token instanceof SqlFullName)
-                t._model = @db.tablesByAlias[token.tip()]
-                @modelTables.push(t._model) if t._model?
+    _addSources: (a, type) ->
+        for o in a
+            s = if o instanceof type then o else new type(o)
+            @sources.push(s)
+            token = @cacheTokenFor(s)
+            s._model =
+                if token instanceof SqlFullName then @db.tablesByAlias[token.tip()] else null
 
     select: (sql) ->
-        @addTables(sql.tables)
-        @addTables(sql.joins)
+        @_addSources(sql.tables, SqlFrom)
+        @_addSources(sql.joins, SqlJoin)
 
         ret = "SELECT "
         if (sql.cntTake)
             ret += "TOP #{sql.cntTake} "
 
-        ret += "#{@columns(sql.columns)} FROM #{@tables(sql.tables)}"
+        ret += "#{@columns(sql.columns)} FROM #{@_doTables()}"
 
-        ret += @joins(sql.joins)
+        ret += @_doJoins()
         ret += @where(sql)
         ret += @groupBy(sql)
         ret += @orderBy(sql)
