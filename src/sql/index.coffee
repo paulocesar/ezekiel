@@ -6,10 +6,11 @@ sql = {
     literal: (o) -> new SqlLiteral(o)
     isLiteral: (o) -> o instanceof SqlLiteral || !(o instanceof SqlToken)
 
-    name: (n) ->
-        return n if n instanceof SqlToken
-        return new SqlFullName(n) if _.isArray(n)
-        return new SqlRawName(n)
+    name: (n...) ->
+        return n[0] if n[0] instanceof SqlToken
+        return new SqlFullName(n[0]) if _.isArray(n[0])
+        return new SqlFullName(n) if n.length > 1
+        return new SqlRawName(n[0])
 
     expr: (e) -> new SqlExpression(e)
     and: (terms...) -> new SqlAnd(_.map(terms, SqlPredicate.wrap))
@@ -127,10 +128,10 @@ class SqlPredicate extends SqlToken
         return predicate
 
     constructor: (terms) ->
-        if (terms.length > 1)
+        if (terms.length? > 1)
             @expr = sql.and(terms...)
         else
-            @expr = SqlPredicate.wrap(terms[0])
+            @expr = SqlPredicate.wrap(_.firstOrSelf(terms))
 
     append: (terms, connector) ->
         if !(@expr instanceof connector)

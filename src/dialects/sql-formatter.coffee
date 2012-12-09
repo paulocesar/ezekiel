@@ -83,7 +83,7 @@ class SqlFormatter
 
         if addAlias
             alias = @_doAlias(token, model, alias)
-            if (alias?)
+            if (alias? && alias != model?.name)
                 s += " as #{@delimit(alias)}"
 
         return s
@@ -112,7 +112,10 @@ class SqlFormatter
         e = @_doToken(token, model)
         a = @_doAlias(token, model, alias)
 
-        return if a? then "#{e} as #{@delimit(a)}" else e
+        return e unless a?
+
+        a = @delimit(a)
+        return if e != a then "#{e} as #{a}" else e
 
     naryOp: (op, atoms) ->
         switch op
@@ -190,9 +193,9 @@ class SqlFormatter
         return "*" if (columnList.length == 0)
         return @doList(columnList, @column)
 
-    _doTables: -> @doList((s for s in @sources when !(s instanceof SqlJoin)))
+    _doTables: -> @doList((s for s in @sources when s instanceof SqlFrom))
 
-    _doJoins: -> @doList((j for j in @sources when j instanceof SqlJoin), @f, ' ')
+    _doJoins: -> @doList((s for s in @sources when s instanceof SqlJoin), @f, ' ')
 
     from: (f) ->
         token = f._token
@@ -238,9 +241,48 @@ class SqlFormatter
             s._model =
                 if token instanceof SqlFullName then @db.tablesByAlias[token.tip()] else null
 
+    _deductJoinPredicates: ->
+        cnt = 1
+        while cnt == null || cnt > 0
+            cnt = 0
+            for j in @sources when j instanceof SqlJoin && j.predicate == null
+                cnt++ if @_buildJoinPredicate(j)
+        return
+
+    _buildJoinPredicate: (j) ->
+        unless j._model?
+            msg = "Unable to build predicate for #{j} because it is not backed " +
+                "by a schema table"
+            throw new Error(msg)
+
+        t = j._model
+
+        candidates =
+            _.filter t.foreignKeys, (fk) =>
+                _.some @sources, (s) =>
+                    s._model == fk.parentTable && (s instanceof SqlFrom || s.predicate?)
+
+
+        if (candidates.length == 0)
+            msg = "Can't find suitable parent to adopt #{j}"
+            throw new Error(msg)
+
+        # SHOULD: get smarter about picking which PK to use
+        pk = candidates[0]
+        parentAlias = pk.parentTable.alias
+        parentKey = pk.parentKey
+
+        terms = (for c, i in pk.columns
+            [sql.name(t.alias, c.alias), sql.name(parentAlias, parentKey.columns[i].alias)]
+        )
+        j.predicate = sql.and(terms...)
+        return true
+
+
     select: (sql) ->
         @_addSources(sql.tables, SqlFrom)
         @_addSources(sql.joins, SqlJoin)
+        @_deductJoinPredicates()
 
         ret = "SELECT "
         if (sql.cntTake)

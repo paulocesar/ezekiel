@@ -3,10 +3,8 @@ _ = require("more-underscore/src")
 
 class SqlAliasedExpression extends SqlToken
     constructor: (a) ->
-        if _.isArray(a)
-            [@atom, @alias] = a
-        else
-            @atom = a
+        @atom = _.firstOrSelf(a)
+        @alias = _.secondOrNull(a)
 
         # This is only used by formatters, users don't have to worry about it
         @_model = null
@@ -15,10 +13,10 @@ class SqlAliasedExpression extends SqlToken
 class SqlFrom extends SqlAliasedExpression
     toSql: (f) -> f.from(@)
 
-class SqlJoin extends SqlFrom
-    constructor: (a, predicate...) ->
+class SqlJoin extends SqlAliasedExpression
+    constructor: (a, predicate) ->
         super(a)
-        @predicate = new SqlPredicate(predicate)
+        @predicate = if predicate? then new SqlPredicate(predicate) else null
 
     toSql: (f) -> f.join(@)
 

@@ -14,7 +14,7 @@ debug = false
 sharedDb = null
 defaultEngine = 'mssql'
 
-newSchema = () -> {
+newSchema = -> {
     tables: [
         { name: 'customers', }
         { name: 'orders' }
@@ -32,7 +32,7 @@ newSchema = () -> {
     ]
 }
 
-newAliasedSchema = () -> {
+newAliasedSchema = -> {
     tables: [
         { name: 'Customers', alias: 'customer' }
         { name: 'Orders', alias: 'order' }
@@ -68,7 +68,7 @@ assertSqlFormatting = (db, sql, expected, debug) ->
     ret = f.format(sql)
     if (ret != expected) || debug
         console.log("--- Return ---")
-        console.log("'#{ret}'")
+        console.log(ret)
         console.log("---")
         console.log("--- Expected ---")
         console.log(expected)
@@ -92,22 +92,23 @@ before((done) ->
 )
 
 module.exports = {
-    testConfig: testConfig
-    requireSrc: requireSrc
+    testConfig
+    requireSrc
     defaultDbConfig: testConfig.databases[defaultEngine]
 
+    assertSqlFormatting
     assertSql: (sql, expected, debug) -> assertSqlFormatting(blankDb(), sql, expected, debug)
     assertSchemaSql: (sql, expected, debug) -> assertSqlFormatting(schemaDb(), sql, expected, debug)
     assertAlias: (sql, expected, debug) -> assertSqlFormatting(aliasedDb(), sql, expected, debug)
 
-    inspect: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
+    dump: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
 
     getSharedDb: (engine = defaultEngine) -> sharedDb
-    connectToDb: connectToDb
+    connectToDb
 
-    newSchema: newSchema
-    newAliasedSchema: newAliasedSchema
-    blankDb: blankDb
-    schemaDb: schemaDb
-    aliasedDb: aliasedDb
+    newSchema
+    newAliasedSchema
+    blankDb
+    schemaDb
+    aliasedDb
 }
