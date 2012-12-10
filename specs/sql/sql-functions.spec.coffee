@@ -31,4 +31,12 @@ describe('SQL Functions', () ->
             "= 'He Who Must Not Be Named'"
 
         h.assertSql(q, e)
+
+    it 'supports arbitrary functions via sql.call()', ->
+        q = sql.select(sql.call('newid'), sql.call('coalesce', 'Name', sql.literal('nameless')))
+            .orderBy(sql.call('newid'))
+
+        e = "SELECT NEWID(), COALESCE([Name], 'nameless') ORDER BY NEWID() ASC"
+
+        h.assertSql(q, e)
 )

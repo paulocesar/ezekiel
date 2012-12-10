@@ -6,6 +6,8 @@ sql = {
     literal: (o) -> new SqlLiteral(o)
     isLiteral: (o) -> o instanceof SqlLiteral || !(o instanceof SqlToken)
 
+    call: (name, args...) -> new FunctionCall(name, args)
+
     name: (n...) ->
         return n[0] if n[0] instanceof SqlToken
         return new SqlFullName(n[0]) if _.isArray(n[0])

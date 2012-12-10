@@ -181,6 +181,9 @@ class SqlFormatter
                 prologue = "#{call.name.toUpperCase()}("
                 epilogue = ")"
 
+        if call.args.length == 0
+            return prologue + epilogue
+
         @doList(call.args, @_doAtom, ', ', prologue, epilogue)
 
 
@@ -293,7 +296,8 @@ class SqlFormatter
         if (sql.cntTake)
             ret += "TOP #{sql.cntTake} "
 
-        ret += "#{@columns(sql.columns)} FROM #{@_doTables()}"
+        ret += "#{@columns(sql.columns)}"
+        ret += " FROM #{@_doTables()}" if sql.tables.length > 0
 
         ret += @_doJoins()
         ret += @where(sql)
