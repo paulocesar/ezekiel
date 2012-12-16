@@ -27,6 +27,9 @@ class SqlFormatter
         return @literal(v)
 
     literal: (l) ->
+        unless l?
+            return 'NULL'
+
         if (_.isString(l))
             return "'" + l.replace("'","''") + "'"
 
