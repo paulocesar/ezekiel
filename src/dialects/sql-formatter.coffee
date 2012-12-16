@@ -77,19 +77,22 @@ class SqlFormatter
     column: (c) ->
         atom = _.firstOrSelf(c)
         alias = _.secondOrNull(c)
-        return @_doAtom(atom, alias, true)
+        return @_doColumnAtom(atom, @_doAliasedColumn, alias)
 
-    _doAtom: (atom, alias, addAlias = false) ->
-        token = @tokenizeAtom(atom)
-        schema = @_findColumnSchema(token)
+    _doAliasedColumn: (token, schema, alias) ->
         s = @_doToken(token, schema)
-
-        if addAlias
-            alias = @_doAlias(token, schema, alias)
-            if (alias? && alias != schema?.name)
-                s += " as #{@delimit(alias)}"
+        alias = @_doAlias(token, schema, alias)
+        if (alias? && alias != schema?.name)
+            s += " as #{@delimit(alias)}"
 
         return s
+
+    # A column might be an actual table column, but it could also be an expression,
+    # SQL literal, subquery, etc.
+    _doColumnAtom: (atom, fn = @_doToken, p = null) ->
+        token = @tokenizeAtom(atom)
+        columnSchema = @_findColumnSchema(token)
+        return fn.call(@, token, columnSchema, p)
 
     _doToken: (token, schema) ->
         if (schema?)
@@ -123,19 +126,19 @@ class SqlFormatter
     naryOp: (op, atoms) ->
         switch op
             when 'isNull'
-                pieces = ("#{@_doAtom(a)} IS NULL" for a in atoms)
+                pieces = ("#{@_doColumnAtom(a)} IS NULL" for a in atoms)
             when 'isntNull', 'isNotNull'
-                pieces = ("#{@_doAtom(a)} IS NOT NULL" for a in atoms)
+                pieces = ("#{@_doColumnAtom(a)} IS NOT NULL" for a in atoms)
             when 'isGood'
                 pieces = []
                 for a in atoms
-                    s = @_doAtom(a)
+                    s = @_doColumnAtom(a)
                     pieces.push("#{s} IS NOT NULL AND LEN(RTRIM(LTRIM(#{s}))) > 0")
 
         return pieces.join(' AND ')
 
     binaryOp: (left, op, right) ->
-        l = @_doAtom(left)
+        l = @_doColumnAtom(left)
         
         sqlOp = operatorAliases[op] ? op.toUpperCase()
         
@@ -187,7 +190,7 @@ class SqlFormatter
         if call.args.length == 0
             return prologue + epilogue
 
-        @doList(call.args, @_doAtom, ', ', prologue, epilogue)
+        @doList(call.args, @_doColumnAtom, ', ', prologue, epilogue)
 
 
     doList: (collection, fn = @f, separator = ', ', prologue = '', epilogue = '') ->
@@ -310,12 +313,12 @@ class SqlFormatter
 
     where: (c) -> if c.whereClause? then " WHERE #{(c.whereClause.toSql(@))}"  else ''
 
-    groupBy: (c) -> @doList(c.groupings, @_doAtom, ', ', ' GROUP BY ')
+    groupBy: (c) -> @doList(c.groupings, @_doColumnAtom, ', ', ' GROUP BY ')
 
     orderBy: (c) -> @doList(c.orderings, @ordering, ', ', ' ORDER BY ')
 
     ordering: (o) ->
-        s = @_doAtom(_.firstOrSelf(o))
+        s = @_doColumnAtom(_.firstOrSelf(o))
         dir = if _.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
 
         "#{s} #{dir}"
@@ -323,7 +326,10 @@ class SqlFormatter
     _doTargetTable: (name) ->
         fullName = @parseWhenRawName(name)
         schema = @_findTableSchema(fullName)
-        @sources.push(_schema: schema) if schema?
+        if schema?
+            @sources.push(_schema: schema)
+            @targetTableSchema = schema
+
         return @_doToken(fullName, schema)
 
     insert: (i) ->
@@ -331,20 +337,32 @@ class SqlFormatter
         names = []
         values = []
         for k, v of i.values
-            names.push(@_doAtom(k))
+            c = @_doColumnAtom(k, @_doInsertUpdateColumn)
+            continue unless c
+            names.push(c)
             values.push(@f(v))
 
         ret += " (#{names.join(', ')}) VALUES (#{values.join(', ')})"
 
-
     update: (u) ->
         ret = "UPDATE #{@_doTargetTable(u.targetTable)} SET "
 
-        values = ("#{@_doAtom(k)} = #{@f(v)}" for k, v of u.values)
+        values = []
+        for k, v of u.values
+            c = @_doColumnAtom(k, @_doInsertUpdateColumn)
+            continue unless c
+            values.push("#{c} = #{@f(v)}")
+
         ret += values.join(', ')
 
         ret += @where(u)
         return ret
+
+    _doInsertUpdateColumn: (token, columnSchema, s) ->
+        if @targetTableSchema? && (not columnSchema? || columnSchema.isReadOnly)
+            return false
+
+        return @_doToken(token, columnSchema)
 
     delete: (d) ->
         ret = "DELETE FROM #{@_doTargetTable(d.targetTable)}"
