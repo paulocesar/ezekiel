@@ -18,7 +18,7 @@ describe('SqlSelect', () ->
         exp += "WHERE ([age] = 22 AND [name] = 'deividy' "
         exp += "AND ([test] = 123 AND [testing] = 1234))"
 
-        h.assertSql(s, exp, false)
+        h.assertSql(s, exp)
     )
 
     it('supports table and column aliases', () ->
@@ -44,7 +44,7 @@ describe('SqlSelect', () ->
         exp += "FROM [users] as [u] INNER JOIN [messages] ON "
         exp += "[U].[id] = [Messages].[UserId]"
 
-        h.assertSql(s, exp, false)
+        h.assertSql(s, exp)
     )
 
     it('supports ORDER BY and GROUP BY', () ->
@@ -57,19 +57,37 @@ describe('SqlSelect', () ->
         exp += "GROUP BY [City], Foo + Bar "
         exp += "ORDER BY [name] ASC, LEN(LastName) ASC, [JoinDate] DESC"
 
-        h.assertSql(s, exp, false)
+        h.assertSql(s, exp)
     )
 
     it('can be instantiated via sql.select', () ->
         s = sql.select('FirstName', 'LastName').from('Customers')
         exp = "SELECT [FirstName], [LastName] FROM [Customers]"
 
-        h.assertSql(s, exp, false)
+        h.assertSql(s, exp)
     )
 
     it 'Supports take(), top(), and limit() to limit number of rows', ->
         for f, i in ['take', 'top', 'limit']
             s = sql.select('firstName').from('customers')[f](i+1)
             e = "SELECT TOP #{i + 1} [firstName] FROM [customers]"
-            h.assertSql(s, e, false)
+            h.assertSql(s, e)
+
+    it 'allows or() to start a WHERE clause', ->
+        s = sql.select('firstName', 'lastName').from('customers')
+            .or({firstName: 'Ronald'}, {firstName: 'Ron'}).and(lastName: 'Weasley')
+
+        e = 'SELECT [firstName], [lastName] FROM [customers] WHERE ' +
+            "(([firstName] = 'Ronald' OR [firstName] = 'Ron') AND [lastName] = 'Weasley')"
+
+        h.assertSql(s, e)
+
+    it 'allows sql.or() to build WHERE clauses', ->
+        s = sql.select('firstName', 'lastName').from('customers')
+            .where(lastName: 'Weasley').and(sql.or({firstName: 'Ronald'}, {firstName: 'Ron'}))
+
+        e = 'SELECT [firstName], [lastName] FROM [customers] WHERE ' +
+            "([lastName] = 'Weasley' AND ([firstName] = 'Ronald' OR [firstName] = 'Ron'))"
+
+        h.assertSql(s, e)
 )
