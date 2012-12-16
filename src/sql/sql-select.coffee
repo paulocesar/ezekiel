@@ -7,7 +7,7 @@ class SqlAliasedExpression extends SqlToken
         @alias = _.secondOrNull(a)
 
         # This is only used by formatters, users don't have to worry about it
-        @_model = null
+        @_schema = null
         @_token = null
 
 class SqlFrom extends SqlAliasedExpression

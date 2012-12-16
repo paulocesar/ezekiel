@@ -81,39 +81,39 @@ class SqlFormatter
 
     _doAtom: (atom, alias, addAlias = false) ->
         token = @tokenizeAtom(atom)
-        model = @_findColumnSchema(token)
-        s = @_doToken(token, model)
+        schema = @_findColumnSchema(token)
+        s = @_doToken(token, schema)
 
         if addAlias
-            alias = @_doAlias(token, model, alias)
-            if (alias? && alias != model?.name)
+            alias = @_doAlias(token, schema, alias)
+            if (alias? && alias != schema?.name)
                 s += " as #{@delimit(alias)}"
 
         return s
 
-    _doToken: (token, model) ->
-        if (model?)
+    _doToken: (token, schema) ->
+        if (schema?)
             # MUST: we assume the column is a DB object at this point. We'll need to handle
             # virtual tables, columns, etc. one day
             if (p = token.prefix())
-                return @joinNameParts([p, model.name])
+                return @joinNameParts([p, schema.name])
             else
-                return @delimit(model.name)
+                return @delimit(schema.name)
         else
             return @f(token)
 
-    _doAlias: (token, model, alias) ->
+    _doAlias: (token, schema, alias) ->
         if alias?
             return alias
 
-        if model?
-            return model.alias
+        if schema?
+            return schema.alias
 
         return null
 
-    _doAliasedExpression: (token, model, alias) ->
-        e = @_doToken(token, model)
-        a = @_doAlias(token, model, alias)
+    _doAliasedExpression: (token, schema, alias) ->
+        e = @_doToken(token, schema)
+        a = @_doAlias(token, schema, alias)
 
         return e unless a?
 
@@ -150,14 +150,14 @@ class SqlFormatter
                 r = @_doPatternMatch(right, '%')
             else
                 rightToken = @parseWhenRawName(right)
-                model = @_findColumnSchema(rightToken)
-                r = @_doToken(rightToken, model)
+                schema = @_findColumnSchema(rightToken)
+                r = @_doToken(rightToken, schema)
 
         return "#{l} #{sqlOp} #{r}"
 
     _doPatternMatch: (rhs, prologue = '', epilogue = '') ->
         t = @parseWhenRawName(rhs)
-        model = @_findColumnSchema(t)
+        schema = @_findColumnSchema(t)
 
         if sql.isLiteral(t)
             p = _.undelimit(@f(rhs), "''")
@@ -205,8 +205,8 @@ class SqlFormatter
 
     from: (f) ->
         token = f._token
-        model = f._model
-        return @_doAliasedExpression(f._token, f._model, f.alias)
+        schema = f._schema
+        return @_doAliasedExpression(f._token, f._schema, f.alias)
 
     join: (j) ->
         str = " INNER JOIN " + @from(j) + " ON " + @f(j.predicate)
@@ -240,8 +240,8 @@ class SqlFormatter
         if table?
             return @db.tablesByAlias[table]?.columnsByAlias[token.tip()]
 
-        for t in @sources when t._model?
-            column = t._model.columnsByAlias[token.tip()]
+        for t in @sources when t._schema?
+            column = t._schema.columnsByAlias[token.tip()]
             if column?
                 return column
 
@@ -250,7 +250,7 @@ class SqlFormatter
             s = if o instanceof type then o else new type(o)
             @sources.push(s)
             token = @cacheTokenFor(s)
-            s._model = @_findTableSchema(token)
+            s._schema = @_findTableSchema(token)
 
     _deductJoinPredicates: ->
         cnt = 1
@@ -263,17 +263,17 @@ class SqlFormatter
         return
 
     _buildJoinPredicate: (j) ->
-        unless j._model?
+        unless j._schema?
             msg = "Unable to build predicate for #{j} because it is not backed " +
                 "by a schema table"
             throw new Error(msg)
 
-        t = j._model
+        t = j._schema
 
         candidates =
             _.filter t.foreignKeys, (fk) =>
                 _.some @sources, (s) =>
-                    s._model == fk.parentTable && (s instanceof SqlFrom || s.predicate?)
+                    s._schema == fk.parentTable && (s instanceof SqlFrom || s.predicate?)
 
 
         return false if (candidates.length == 0)
@@ -323,7 +323,7 @@ class SqlFormatter
     _doTargetTable: (name) ->
         fullName = @parseWhenRawName(name)
         schema = @_findTableSchema(fullName)
-        @sources.push(_model: schema) if schema?
+        @sources.push(_schema: schema) if schema?
         return @_doToken(fullName, schema)
 
     insert: (i) ->
