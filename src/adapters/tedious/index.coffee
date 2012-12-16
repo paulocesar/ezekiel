@@ -12,14 +12,19 @@ class TediousAdapter
         @config.password = config.password
         @config.server = config.host
         @config.options.database = config.database
+        @pooling = config.pooling ? true
 
-        @pool = poolModule.Pool({
-            name: 'tedious'
-            create: (cb) => @_createConnection(@config, cb)
-            destroy: (conn) => conn.close()
-        })
+        if @pooling
+            # By default, we use a maximum pool size of 100, equal to the .NET default
+            # See http://msdn.microsoft.com/en-us/library/8xx3tyca.aspx
+            @pool = poolModule.Pool({
+                name: 'tedious'
+                create: (cb) => @_createConnection(cb)
+                destroy: (conn) => conn.close()
+                max: 100
+            })
 
-    _createConnection: (options, callback) ->
+    _createConnection: (callback) ->
         conn = new Connection(@config)
         conn.on('connect', (err) =>
             if (err)
@@ -38,10 +43,13 @@ class TediousAdapter
                 conn.execSqlBatch(request)
         )
 
+    connect: (cb) -> if @pooling then @pool.acquire(cb) else @_createConnection(cb)
+    release: (conn) -> if @pooling then @pool.release(conn) else conn.close()
+
     execute: (options) ->
         fnErr = options.onError ? @onExecuteError
 
-        @pool.acquire((err, conn) =>
+        @connect (err, conn) =>
             if(err)
                 fnErr(err)
                 return
@@ -51,6 +59,8 @@ class TediousAdapter
             rows = [] if doAllRows
 
             request = new Request(options.stmt, (err, rowCount) =>
+                @release(conn)
+
                 if (err)
                     fnErr(err)
                     return
@@ -60,8 +70,6 @@ class TediousAdapter
 
                 if options.onDone?
                     options.onDone(rowCount)
-
-                @pool.release(conn)
             )
 
             if (doRow || doAllRows)
@@ -90,7 +98,6 @@ class TediousAdapter
                 )
                 
             conn.execSqlBatch(request)
-        )
 
 
     onConnectionMessage: (msg) ->

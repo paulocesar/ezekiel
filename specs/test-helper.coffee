@@ -1,6 +1,9 @@
 util = require('util')
-sql = require('../src/sql')
 path = require('path')
+_ = require('more-underscore/src')
+async = require('async')
+
+sql = require('../src/sql')
 
 testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
@@ -112,5 +115,8 @@ module.exports = {
     newAliasedSchema
     blankDb
     schemaDb
-    aliasedDb
+    aliasedDb,
+
+    _,
+    async
 }
