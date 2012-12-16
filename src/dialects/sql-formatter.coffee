@@ -260,12 +260,12 @@ class SqlFormatter
         while cnt > 0
             cnt = 0
             for j in @sources when j instanceof SqlJoin && j.predicate == null
-                cnt++ if @_buildJoinPredicate(j)
+                cnt++ if @_findFkForJoin(j)
 
         # SHOULD: throw if there are still unresolved JOINS
         return
 
-    _buildJoinPredicate: (j) ->
+    _findFkForJoin: (j) ->
         unless j._schema?
             msg = "Unable to build predicate for #{j} because it is not backed " +
                 "by a schema table"
@@ -273,25 +273,39 @@ class SqlFormatter
 
         t = j._schema
 
-        candidates =
+        viableSources =
+            (s for s in @sources when s._schema? && (s instanceof SqlFrom || s.predicate?))
+
+        parents =
             _.filter t.foreignKeys, (fk) =>
-                _.some @sources, (s) =>
-                    s._schema == fk.parentTable && (s instanceof SqlFrom || s.predicate?)
+                _.some viableSources, (s) =>
+                    s._schema == fk.parentTable
 
+        if (parents.length > 0)
+            # MAY: get smarter about picking which PK to use
+            return @_joinByFk(j, parents[0])
 
-        return false if (candidates.length == 0)
+        children =
+            _.filter t.incomingFKs, (fk) =>
+                _.some viableSources, (s) =>
+                    s._schema == fk.table
 
-        # SHOULD: get smarter about picking which PK to use
-        pk = candidates[0]
-        parentAlias = pk.parentTable.alias
-        parentKey = pk.parentKey
+        if (children.length > 0)
+            return @_joinByFk(j, children[0])
 
-        terms = (for c, i in pk.columns
-            [sql.name(t.alias, c.alias), sql.name(parentAlias, parentKey.columns[i].alias)]
+        return false
+
+    _joinByFk: (j, fk) ->
+        childAlias = fk.table.alias
+        parentAlias = fk.parentTable.alias
+        parentKey = fk.parentKey
+
+        terms = (for c, i in fk.columns
+            [sql.name(childAlias, c.alias), sql.name(parentAlias, parentKey.columns[i].alias)]
         )
         j.predicate = sql.and(terms...)
-        return true
 
+        return true
 
     select: (sql) ->
         @_addSources(sql.tables, SqlFrom)
