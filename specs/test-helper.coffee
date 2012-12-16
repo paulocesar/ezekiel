@@ -16,31 +16,31 @@ defaultEngine = 'mssql'
 
 newSchema = -> {
     tables: [
-        { name: 'customers', }
-        { name: 'orders' }
+        { name: 'Customers', }
+        { name: 'Orders' }
     ]
     columns: [
-        { tableName: 'customers', name: 'id', position: 1 }
-        { tableName: 'customers', name: 'firstName', position: 2 }
+        { tableName: 'Customers', name: 'Id', position: 1 }
+        { tableName: 'Customers', name: 'FirstName', position: 2 }
     ]
     keys: [
-        { type: 'PRIMARY KEY', tableName: 'customers', name: 'PK_Customers' }
+        { type: 'PRIMARY KEY', tableName: 'Customers', name: 'PK_Customers' }
     ]
     foreignKeys: []
     keyColumns: [
-        { columnName: 'id', tableName: 'customers', position: 1, constraintName: 'PK_Customers' }
+        { columnName: 'Id', tableName: 'Customers', position: 1, constraintName: 'PK_Customers' }
     ]
 }
 
 newAliasedSchema = -> {
     tables: [
-        { name: 'Customers', alias: 'customer' }
-        { name: 'Orders', alias: 'order' }
+        { name: 'Customers', alias: 'tblCustomers' }
+        { name: 'Orders', alias: 'tblOrders' }
     ]
     columns: [
-        { tableName: 'Customers', name: 'id', alias: 'CustomerId', position: 1 }
-        { tableName: 'Customers', name: 'FirstName', alias: 'CustomerFirstName', position: 2 }
-        { tableName: 'Customers', name: 'LastName', alias: 'CustomerLastName', position: 3 }
+        { tableName: 'Customers', name: 'Id', alias: 'colId', position: 1 }
+        { tableName: 'Customers', name: 'FirstName', alias: 'colFirstName', position: 2 }
+        { tableName: 'Customers', name: 'LastName', alias: 'colLastName', position: 3 }
     ]
     keys: []
     foreignKeys: []

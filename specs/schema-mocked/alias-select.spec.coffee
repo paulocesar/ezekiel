@@ -2,40 +2,38 @@ h = require('../test-helper')
 sql = h.requireSrc('sql')
 
 describe('SqlSelect with aliased schema', () ->
-    it('Has the right aliases in place', ->
+    it 'has the right aliases in place', ->
         d = h.aliasedDb()
-        Object.keys(d.tablesByAlias).sort().should.eql(['customer', 'order'])
-    )
+        Object.keys(d.tablesByAlias).sort().should.eql(['tblCustomers', 'tblOrders'])
 
-
-    it('Handles basic SELECT', ->
-        s = sql.select('CustomerId', 'CustomerFirstName').from('customer')
-        expected = "SELECT [id] as [CustomerId], [FirstName] as [CustomerFirstName] FROM " +
-            "[Customers] as [customer]"
+    it 'handles basic SELECT', ->
+        s = sql.select('colId', 'colFirstName').from('tblCustomers')
+        expected = "SELECT [Id] as [colId], [FirstName] as [colFirstName] FROM " +
+            "[Customers] as [tblCustomers]"
         h.assertAlias(s, expected)
-    )
+    
 
-    it('Handles SQL prefixes', ->
-        s = sql.select('customer.CustomerId', 'CustomerFirstName').from('customer')
+    it 'handles SQL prefixes', ->
+        s = sql.select('tblCustomers.colId', 'colFirstName').from('tblCustomers')
 
-        expected = "SELECT [customer].[id] as [CustomerId], [FirstName] as " +
-             "[CustomerFirstName] FROM [Customers] as [customer]"
+        expected = "SELECT [tblCustomers].[Id] as [colId], [FirstName] as " +
+             "[colFirstName] FROM [Customers] as [tblCustomers]"
 
         h.assertAlias(s, expected)
-    )
+    
 
-    it('Handles SELECT with WHERE clause', ->
-        s = sql.select('CustomerId', 'CustomerFirstName').from('customer')
-            .where({CustomerFirstName: 'Bilbo'})
-        expected = "SELECT [id] as [CustomerId], [FirstName] as [CustomerFirstName] FROM " +
-            "[Customers] as [customer] WHERE [FirstName] = 'Bilbo'"
+    it 'handles SELECT with WHERE clause', ->
+        s = sql.select('colId', 'colFirstName').from('tblCustomers')
+            .where({colFirstName: 'Bilbo'})
+        expected = "SELECT [Id] as [colId], [FirstName] as [colFirstName] FROM " +
+            "[Customers] as [tblCustomers] WHERE [FirstName] = 'Bilbo'"
         h.assertAlias(s, expected)
-    )
+    
 
-    it('Aliases in ORDER BY', ->
-        s = sql.select('CustomerId').from('customer').orderBy('CustomerFirstName')
-        expected = "SELECT [id] as [CustomerId] FROM [Customers] as [customer] " +
+    it 'aliases in ORDER BY', ->
+        s = sql.select('colId').from('tblCustomers').orderBy('colFirstName')
+        expected = "SELECT [Id] as [colId] FROM [Customers] as [tblCustomers] " +
             "ORDER BY [FirstName] ASC"
         h.assertAlias(s, expected)
-    )
+    
 )

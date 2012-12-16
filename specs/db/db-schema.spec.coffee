@@ -7,7 +7,7 @@ testDb = null
 withDbAndSchema = (f) -> f(h.blankDb(), h.newSchema())
 
 describe('Database schema handling', () ->
-    it('Can load schema from a database', (done) ->
+    it 'can load schema from a database', (done) ->
         h.connectToDb((freshDb) ->
             testDb = freshDb
 
@@ -18,27 +18,27 @@ describe('Database schema handling', () ->
                 done()
             )
         )
-    )
+    
 
-    it('Loads schema correctly', () ->
+    it 'loads schema correctly', () ->
         testDb.tables.length.should.eql(4)
-    )
+    
 
-    it('Detects clashes in column positions', () ->
+    it 'detects clashes in column positions', () ->
         withDbAndSchema((db, s) ->
             s.columns[1].position = 1
             (() -> db.loadSchema(s)).should.throw(/Expected position/)
         )
-    )
+    
 
-    it('Throws if name and alias are missing', ->
+    it 'throws if name and alias are missing', ->
         withDbAndSchema((db, s) ->
             s.tables[0].name = null
             (() -> db.loadSchema(s)).should.throw(/must provide/)
         )
-    )
+    
 
-    it('Allows tables with only an alias', ->
+    it 'allows tables with only an alias', ->
         withDbAndSchema((db, s) ->
             s.tables.push({ alias: 'FakePlasticTable' })
             db.loadSchema(s)
@@ -53,44 +53,44 @@ describe('Database schema handling', () ->
             c.table.should.eql(t)
             t.columns.length.should.eql(1)
         )
-    )
+    
 
-    it('Throws if a name clashes', ->
+    it 'throws if a name clashes', ->
         db = h.schemaDb()
-        clash = () -> db.tablesByName.customers.name = 'orders'
+        clash = () -> db.tablesByName.Customers.name = 'Orders'
         clash.should.throw(/it is already taken/)
-    )
 
-    it('Throws if an alias clashes', ->
+
+    it 'throws if an alias clashes', ->
         db = h.schemaDb()
-        clash = () -> db.tablesByName.customers.alias = 'orders'
+        clash = () -> db.tablesByName.Customers.alias = 'Orders'
         clash.should.throw(/it is already taken/)
-    )
 
-    it('Keeps the aliases hash tidy', ->
+
+    it 'keeps the aliases hash tidy', ->
         a = h.aliasedDb().tablesByAlias
-        Object.keys(a).sort().should.eql(['customer', 'order'])
+        Object.keys(a).sort().should.eql(['tblCustomers', 'tblOrders'])
 
-        a.customer.alias = 'cust'
-        Object.keys(a).sort().should.eql(['cust', 'order'])
-    )
+        a.tblCustomers.alias = 'cust'
+        Object.keys(a).sort().should.eql(['cust', 'tblOrders'])
 
-    it('Knows if a column is the full primary key', ->
+
+    it 'knows if a column is the full primary key', ->
         db = h.schemaDb()
-        c = db.tablesByAlias.customers
-        c.columnsByAlias.id.isFullPrimaryKey().should.be.true
-    )
+        c = db.tablesByAlias.Customers
+        c.columnsByAlias.Id.isFullPrimaryKey().should.be.true
+    
 
-    it('Knows that a column in a composite PK is not the full PK', ->
+    it 'knows that a column in a composite PK is not the full PK', ->
         withDbAndSchema((db, s) ->
             s.keyColumns.push({
-                columnName: 'id', tableName: 'customers', position: 2,
+                columnName: 'Id', tableName: 'Customers', position: 2,
                 constraintName: 'PK_Customers'
             })
 
             db.loadSchema(s)
-            c = db.tablesByAlias.customers
-            c.columnsByAlias.id.isFullPrimaryKey().should.be.false
+            c = db.tablesByAlias.Customers
+            c.columnsByAlias.Id.isFullPrimaryKey().should.be.false
         )
-    )
+    
 )
