@@ -22,6 +22,7 @@ newSchema = -> {
     columns: [
         { tableName: 'Customers', name: 'Id', position: 1 }
         { tableName: 'Customers', name: 'FirstName', position: 2 }
+        { tableName: 'Customers', name: 'LastName', position: 3 }
     ]
     keys: [
         { type: 'PRIMARY KEY', tableName: 'Customers', name: 'PK_Customers' }
