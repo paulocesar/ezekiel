@@ -17,6 +17,8 @@ sql = {
     expr: (e) -> new SqlExpression(e)
     and: (terms...) -> new SqlAnd(_.map(terms, SqlPredicate.wrap))
     or: (terms...) -> new SqlOr(_.map(terms, SqlPredicate.wrap))
+
+    star: (table) -> new SqlStar(table)
 }
 
 class SqlToken
@@ -46,6 +48,10 @@ class SqlExpression extends SqlVerbatim
 class SqlLiteral extends SqlToken
     constructor: (@l) ->
     toSql: (f) -> f.literal(@l)
+
+class SqlStar extends SqlToken
+    constructor: (@table) ->
+    toSql: (f) -> f.star(@)
 
 class SqlRawName extends SqlToken
     constructor: (@name) ->

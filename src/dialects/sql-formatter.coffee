@@ -7,6 +7,7 @@ rgxParseName = ///
     \.?         # optional . at the end
 ///g
 
+rgxStar = /^(?:(.+)\.)?\*$/
 rgxExpression = /[()\+\*\-/]/
 rgxPatternMetaChars = /[%_[]/g
 
@@ -40,8 +41,6 @@ class SqlFormatter
 
     parens: (contents) -> "(#{contents.toSql(@)})"
 
-    isExpression: (e) -> _.isString(e) && rgxExpression.test(e)
-
     and: (terms) ->
         t = _.map(terms, @f, @)
         return "(#{t.join(" AND " )})"
@@ -73,6 +72,35 @@ class SqlFormatter
         return new SqlFullName(parts)
 
     delimit: (s) -> "[#{s}]"
+
+    star: (s) ->
+        if (s.table?)
+            table = @tokenizeAtom(s.table)
+            schema = @_findTableSchema(table)
+            return @_doStar(table, schema)
+        else
+            if _.every(@sources, (s) -> not s._schema?)
+                return '*'
+
+            parts = for s in @sources
+                @_doStar(s._token, s._schema)
+
+            return parts.join(', ')
+
+    _doStar: (tableToken, schema) ->
+        if schema?
+            # special case to avoid needless table prefix
+            if @sources.length == 1 && @sources[0]._schema == schema
+                prefix = ''
+            else
+                prefix = @f(tableToken) + '.'
+
+            parts = for c in schema.columns
+                "#{prefix}#{@delimit(c.name)} as #{@delimit(c.alias)}"
+
+            return parts.join(', ')
+        else
+            return @f(tableToken) + '.*'
 
     column: (c) ->
         atom = _.firstOrSelf(c)
@@ -198,10 +226,6 @@ class SqlFormatter
         results = (fn.call(@, i) for i in collection)
         return prologue + results.join(separator) + epilogue
 
-    columns: (columnList) ->
-        return "*" if (columnList.length == 0)
-        return @doList(columnList, @column)
-
     _doTables: -> @doList((s for s in @sources when s instanceof SqlFrom))
 
     _doJoins: -> @doList((s for s in @sources when s instanceof SqlJoin), @f, ' ')
@@ -219,10 +243,14 @@ class SqlFormatter
         if n instanceof SqlFullName
             return n
 
-        if @isExpression(atom)
-            return sql.expr(atom)
-
         if _.isString(atom)
+            if rgxStar.test(atom)
+                tableName = atom.match(rgxStar)[1]
+                return sql.star(tableName)
+
+            if rgxExpression.test(atom)
+                return sql.expr(atom)
+
             return @fullNameFromString(atom)
 
         return atom
@@ -268,7 +296,7 @@ class SqlFormatter
     _findFkForJoin: (j) ->
         unless j._schema?
             msg = "Unable to build predicate for #{j} because it is not backed " +
-                "by a schema table"
+                "by a table schema"
             throw new Error(msg)
 
         t = j._schema
@@ -307,22 +335,23 @@ class SqlFormatter
 
         return true
 
-    select: (sql) ->
-        @_addSources(sql.tables, SqlFrom)
-        @_addSources(sql.joins, SqlJoin)
+    select: (q) ->
+        @_addSources(q.tables, SqlFrom)
+        @_addSources(q.joins, SqlJoin)
         @_deductJoinPredicates()
 
         ret = "SELECT "
-        if (sql.cntTake)
-            ret += "TOP #{sql.cntTake} "
+        if (q.cntTake)
+            ret += "TOP #{q.cntTake} "
 
-        ret += "#{@columns(sql.columns)}"
-        ret += " FROM #{@_doTables()}" if sql.tables.length > 0
+        @columns = if q.columns.length > 0 then q.columns else [sql.star()]
+        ret += @doList(@columns, @column)
+        ret += " FROM #{@_doTables()}" if q.tables.length > 0
 
         ret += @_doJoins()
-        ret += @where(sql)
-        ret += @groupBy(sql)
-        ret += @orderBy(sql)
+        ret += @where(q)
+        ret += @groupBy(q)
+        ret += @orderBy(q)
         return ret
 
     where: (c) -> if c.whereClause? then " WHERE #{(c.whereClause.toSql(@))}"  else ''
