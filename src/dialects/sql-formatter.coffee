@@ -236,7 +236,7 @@ class SqlFormatter
         return @_doAliasedExpression(f._token, f._schema, f.alias)
 
     join: (j) ->
-        str = " INNER JOIN " + @from(j) + " ON " + @f(j.predicate)
+        str = " #{j.type} JOIN #{@from(j)} ON #{@f(j.predicate)}"
 
     tokenizeAtom: (atom) ->
         n = @parseWhenRawName(atom)
