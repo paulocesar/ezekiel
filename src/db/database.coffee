@@ -17,18 +17,23 @@ class Database extends DbObject
     run: (stmt, cb) ->
         @execute(stmt, { onDone: () -> cb(null) }, cb)
 
-    scalar: (query, cb) -> @_selectOneRow(query, 'array', cb)
+    scalar: (query, cb) -> @_selectOneRow(query, 'array', false, cb)
 
-    oneRow: (query, cb) -> @_selectOneRow(query, 'object', cb)
+    oneRow: (query, cb) -> @_selectOneRow(query, 'object', false, cb)
 
-    _selectOneRow: (query, rowShape, cb) ->
+    tryScalar: (query, cb) -> @_selectOneRow(query, 'array', true, cb)
+
+    tryOneRow: (query, cb) -> @_selectOneRow(query, 'object', true, cb)
+
+    _selectOneRow: (query, rowShape, allowEmpty, cb) ->
         opt = {
             rowShape: rowShape
             onAllRows: (rows) ->
                 if (rows.length != 1)
                     e = "Expected query #{query} to return 1 row, " +
                         "but it returned #{rows.length} rows."
-                    cb(e)
+                    cb(e) if rows.length > 1 || !allowEmpty
+                    cb(null, null)
 
                 v = (if rowShape == 'array' then rows[0][0] else rows[0])
                 cb(null, v)
