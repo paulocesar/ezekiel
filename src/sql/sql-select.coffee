@@ -14,9 +14,10 @@ class SqlFrom extends SqlAliasedExpression
     toSql: (f) -> f.from(@)
 
 class SqlJoin extends SqlAliasedExpression
-    constructor: (a, predicate) ->
+    constructor: (a, predicate, type) ->
         super(a)
         @predicate = if predicate? then new SqlPredicate(predicate) else null
+        @type = if type? then type else "INNER"
 
     toSql: (f) -> f.join(@)
 
@@ -56,10 +57,19 @@ class SqlSelect extends SqlStatement
         @tables.push(table)
         return @
 
-    join: (j, clause) ->
-        join = if clause? then sql.join(j, clause) else j
+    join: (j, clause, type) ->
+        join = if clause? then sql.join(j, clause, type) else j
         @joins.push(join)
         return @
+
+    leftJoin: (j, clause) ->
+        return @join(j, clause, "LEFT")
+
+    fullJoin: (j, clause) ->
+        return @join(j, clause, "FULL OUTER")
+
+    rightJoin: (j, clause) ->
+        return @join(j, clause, "RIGHT")
 
     where: (terms...) ->
         @whereClause = @addTerms(@whereClause, terms)
@@ -102,9 +112,9 @@ _.extend(sql, {
     select: (t...) ->
         s = new SqlSelect()
         s.select(t...)
-    
+
     from: (t) -> new SqlSelect(t)
-    join: (table, clause) -> new SqlJoin(table, clause)
+    join: (table, clause, type) -> new SqlJoin(table, clause, type)
 
     SqlSelect
     SqlJoin
