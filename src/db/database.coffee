@@ -29,11 +29,18 @@ class Database extends DbObject
         opt = {
             rowShape: rowShape
             onAllRows: (rows) ->
+                if rows.length == 0
+                    if !allowEmpty
+                        e  = "Expected query #{query} to return 1 row, " +
+                             "but it returned 0 rows."
+                        return cb(e)
+                    else
+                        return cb(null, null)
+
                 if (rows.length != 1)
                     e = "Expected query #{query} to return 1 row, " +
                         "but it returned #{rows.length} rows."
-                    cb(e) if rows.length > 1 || !allowEmpty
-                    cb(null, null)
+                    return cb(e)
 
                 v = (if rowShape == 'array' then rows[0][0] else rows[0])
                 cb(null, v)
