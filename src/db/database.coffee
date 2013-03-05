@@ -31,15 +31,13 @@ class Database extends DbObject
             onAllRows: (rows) ->
                 if rows.length == 0
                     if !allowEmpty
-                        e  = "Expected query #{query} to return 1 row, " +
-                             "but it returned 0 rows."
+                        e  = "No data returned for query #{query}. Expected 1 row"
                         return cb(e)
                     else
                         return cb(null, null)
 
                 if (rows.length != 1)
-                    e = "Expected query #{query} to return 1 row, " +
-                        "but it returned #{rows.length} rows."
+                    e = "Too many rows returned for query #{query}. Expected 1 row but got #{rows.length}"
                     return cb(e)
 
                 v = (if rowShape == 'array' then rows[0][0] else rows[0])
