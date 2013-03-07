@@ -35,13 +35,49 @@ describe('SqlSelect', () ->
         h.assertSql(s, exp)
     )
 
-    it('supports JOINS', () ->
+    it('supports INNER joins by default', () ->
         s = sql.from(['users', 'u'])
             .select("login", [ 'zid', 'id' ], [ 'zname', 'name' ])
             .join("messages", { "U.id": sql.name("Messages.UserId")})
 
         exp = "SELECT [login], [zid] as [id], [zname] as [name] "
         exp += "FROM [users] as [u] INNER JOIN [messages] ON "
+        exp += "[U].[id] = [Messages].[UserId]"
+
+        h.assertSql(s, exp)
+    )
+
+    it('supports LEFT joins', () ->
+        s = sql.from(['users', 'u'])
+            .select("login", [ 'zid', 'id' ], [ 'zname', 'name' ])
+            .leftJoin("messages", { "U.id": sql.name("Messages.UserId")})
+
+        exp = "SELECT [login], [zid] as [id], [zname] as [name] "
+        exp += "FROM [users] as [u] LEFT JOIN [messages] ON "
+        exp += "[U].[id] = [Messages].[UserId]"
+
+        h.assertSql(s, exp)
+    )
+
+    it('supports RIGHT joins', () ->
+        s = sql.from(['users', 'u'])
+            .select("login", [ 'zid', 'id' ], [ 'zname', 'name' ])
+            .rightJoin("messages", { "U.id": sql.name("Messages.UserId")})
+
+        exp = "SELECT [login], [zid] as [id], [zname] as [name] "
+        exp += "FROM [users] as [u] RIGHT JOIN [messages] ON "
+        exp += "[U].[id] = [Messages].[UserId]"
+
+        h.assertSql(s, exp)
+    )
+
+    it('supports FULL OUTER joins', () ->
+        s = sql.from(['users', 'u'])
+            .select("login", [ 'zid', 'id' ], [ 'zname', 'name' ])
+            .fullJoin("messages", { "U.id": sql.name("Messages.UserId")})
+
+        exp = "SELECT [login], [zid] as [id], [zname] as [name] "
+        exp += "FROM [users] as [u] FULL OUTER JOIN [messages] ON "
         exp += "[U].[id] = [Messages].[UserId]"
 
         h.assertSql(s, exp)
