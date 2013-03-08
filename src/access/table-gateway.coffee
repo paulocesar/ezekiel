@@ -1,6 +1,7 @@
 _ = require('more-underscore/src')
 
 { SqlToken } = sql = require('../sql')
+queryBinder = require('./query-binder')
 
 class TableGateway
     constructor: (@db, @table) ->

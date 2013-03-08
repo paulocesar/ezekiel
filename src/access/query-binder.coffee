@@ -1,9 +1,5 @@
 _ = require('more-underscore/src')
 
-dbObjects = require('./index')
-{ DbObject, Table, Column, Key, ForeignKey } = dbObjects
-{ SqlToken } = require('../sql')
-
 boundFunctions = {
     scalar: (cb) -> @db.scalar(@, cb)
     tryScalar: (cb) -> @db.tryScalar(@, cb)
@@ -19,7 +15,7 @@ module.exports = {
         bound = Object.create(q)
         bound.db = db
         _.extend(bound, boundFunctions)
-        bound.run = b[defaultFn] if defaultFn?
+        bound.run = bound[defaultFn] if defaultFn?
         return bound
 
     bindError: (q, err) ->

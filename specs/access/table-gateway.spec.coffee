@@ -11,14 +11,18 @@ before () ->
     tables = schema.tablesByAlias
 
 customerGateway = () -> new TableGateway(db, tables.Customers)
+assertCustomerOne = (done) -> (err, row) ->
+    return done(err) if err
+    row.Id.should.eql(1)
+    done()
 
 describe 'TableGateway', () ->
     it 'Can be instantiated', () -> customerGateway()
 
-    it 'Can find one row', (done) ->
+    it 'Finds one row', (done) ->
         g = customerGateway()
-        g.findOne 1, (err, row) ->
-            return done(err) if err
+        g.findOne(1, assertCustomerOne(done))
 
-            row.Id.should.eql(1)
-            done()
+    it 'Can postpone execution', (done) ->
+        g = customerGateway()
+        g.findOne(1).run(assertCustomerOne(done))
