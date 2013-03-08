@@ -11,7 +11,7 @@ requireSrc = (pathToFile) -> require(path.resolve(sourceFolder, pathToFile))
 
 SqlFormatter = requireSrc('dialects/sql-formatter')
 ezekiel = requireSrc()
-Database = requireSrc('db/database')
+Database = requireSrc('access/database')
 
 debug = false
 sharedDb = null

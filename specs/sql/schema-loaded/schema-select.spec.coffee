@@ -1,5 +1,5 @@
-h = require('../test-helper')
-require('../load-schema')
+h = require('../../test-helper')
+require('../../load-schema')
 sql = h.requireSrc('sql')
 
 db = null

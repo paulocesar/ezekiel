@@ -24,7 +24,7 @@ CREATE TABLE dbo.OrderLines (
 	OrderId int NOT NULL,
 	CONSTRAINT FK_OrdersLines_Orders FOREIGN KEY (OrderId) REFERENCES Orders,
 	LineNumber int NOT NULL,
-	CONSTRAINT UQ_OderId_LineId UNIQUE NONCLUSTERED (OrderId, LineNumber),
+	CONSTRAINT UQ_OrderId_LineId UNIQUE NONCLUSTERED (OrderId, LineNumber),
 	
 	ProductId int NOT NULL,
 	CONSTRAINT FK_OrderLines_Products FOREIGN KEY (ProductId) REFERENCES Products

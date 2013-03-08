@@ -116,6 +116,7 @@ describe('Schema functions', () ->
             checkKeys(m.keys)
             checkForeignKeys(m.foreignKeys)
             checkKeyColumns(m.keyColumns)
+
             done()
         )
     )

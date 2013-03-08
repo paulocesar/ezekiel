@@ -1,9 +1,9 @@
-h = require('../test-helper')
+h = require('../../test-helper')
 sql = h.requireSrc('sql')
 
-describe('SqlSelect with aliased schema', () ->
+describe 'SqlSelect with aliased schema', () ->
     it 'has the right aliases in place', ->
-        d = h.aliasedDb()
+        d = h.aliasedDb().schema
         Object.keys(d.tablesByAlias).sort().should.eql(['tblCustomers', 'tblOrders'])
 
     it 'does basic SELECT', ->
@@ -11,7 +11,6 @@ describe('SqlSelect with aliased schema', () ->
         expected = "SELECT [Id] as [colId], [FirstName] as [colFirstName] FROM " +
             "[Customers] as [tblCustomers]"
         h.assertAlias(s, expected)
-    
 
     it 'does SQL prefixes', ->
         s = sql.select('tblCustomers.colId', 'colFirstName').from('tblCustomers')
@@ -21,14 +20,12 @@ describe('SqlSelect with aliased schema', () ->
 
         h.assertAlias(s, expected)
     
-
     it 'does SELECT with WHERE clause', ->
         s = sql.select('colId', 'colFirstName').from('tblCustomers')
             .where({colFirstName: 'Bilbo'})
         expected = "SELECT [Id] as [colId], [FirstName] as [colFirstName] FROM " +
             "[Customers] as [tblCustomers] WHERE [FirstName] = 'Bilbo'"
         h.assertAlias(s, expected)
-    
 
     it 'does ORDER BY', ->
         s = sql.select('colId').from('tblCustomers').orderBy('colFirstName')
@@ -41,5 +38,3 @@ describe('SqlSelect with aliased schema', () ->
         expected = "SELECT [Id] as [colId], [FirstName] as [colFirstName], " +
             "[LastName] as [colLastName] FROM [Customers] as [tblCustomers]"
         h.assertAlias(s, expected)
-    
-)

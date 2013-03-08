@@ -261,7 +261,7 @@ class SqlFormatter
         unless token instanceof SqlFullName
             return null
 
-        return @db.tablesByAlias[token.tip()] ? null
+        return @db.schema.tablesByAlias[token.tip()] ? null
 
     _findColumnSchema: (token) ->
         unless token instanceof SqlFullName
@@ -269,7 +269,7 @@ class SqlFormatter
 
         table = token.prefix()
         if table?
-            return @db.tablesByAlias[table]?.columnsByAlias[token.tip()]
+            return @db.schema.tablesByAlias[table]?.columnsByAlias[token.tip()]
 
         for t in @sources when t._schema?
             column = t._schema.columnsByAlias[token.tip()]

@@ -89,9 +89,45 @@ class Table extends AliasedObject
     siblingsByName: () -> @db.tablesByName
     siblingsByAlias: () -> @db.tablesByAlias
 
+
+jsTypes = {
+    number:
+        matchesType: _.isNumber
+        convert: Number
+        name: 'Number'
+
+    boolean:
+        matchesType: _.isBoolean
+        # MUST: ponder the fact that Boolean('false') is true, see if we want to do something
+        # about it
+        convert: Boolean
+        name: 'Boolean'
+
+    string:
+        matchesType: _.isString
+        convert: String
+        name: 'String'
+
+    date:
+        matchesType: _.isDate
+        # MUST: beef date conversion way up
+        convert: (v) -> new Date(Date.parse(v.toString()))
+        name: 'Date'
+}
+
+
+dbTypeToJsType = {
+    varchar: 'string'
+    datetime: 'date'
+    int: 'number'
+}
+
 class Column extends AliasedObject
     constructor: (@table, schema) ->
         super(schema)
+
+        t = dbTypeToJsType[@dbDataType]
+        @jsType = jsTypes[t]
         @isPartOfKey = false
         @isReadOnly = @isIdentity || @isComputed
         @isRequired = !@isNullable
@@ -103,6 +139,8 @@ class Column extends AliasedObject
     siblingsByName: () -> @table.columnsByName
     siblingsByAlias: () -> @table.columnsByAlias
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
+
+    matchesType: (v) -> @jsType.matchesType(v)
 
 class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']
@@ -130,6 +168,42 @@ class Key extends Constraint
         if @type == 'PRIMARY KEY'
             @table.pk = @
 
+    matchesType: () ->
+        keyValues = _.unwrapArgs(arguments)
+
+        unless keyValues?
+            e = "You must provide key values to see if their shape matches key #{@}"
+            throw new Error(e)
+
+        unless _.isArray(keyValues)
+            return @columns.length == 1 && @columns[0].matchesType(keyValues)
+
+        return false unless @columns.length == keyValues.length
+
+        for c, i in @columns
+            v = keyValues[i]
+            return false unless c.matchesType(v)
+
+        return true
+
+    wrapValues: () ->
+        keyValues = _.unwrapArgs(arguments)
+
+        unless keyValues?
+            e = "You must provide the key values corresponding to the columns in #{@}"
+            throw new Error(e)
+
+        unless @matchesType(keyValues)
+            e = "The key values provided (#{keyValues}) do not match the shape of #{@}"
+            throw new Error(e)
+
+        o = {}
+        for c, i in @columns
+            v = if i == 0 then _.firstOrSelf(keyValues) else keyValues[i]
+            o[c.alias] = v
+
+        return o
+
 class ForeignKey extends Constraint
     constructor: (@table, schema) ->
         super(@table, schema)
@@ -152,6 +226,8 @@ class ForeignKey extends Constraint
         @parentTable.incomingFKs.push(@)
 
 
-module.exports = { DbObject, Table, Column, Key, ForeignKey, Constraint }
 
-require('./database')
+module.exports = { DbObject, AliasedObject, Column, Key, ForeignKey, Constraint }
+
+require('./table')
+require('./db-schema')

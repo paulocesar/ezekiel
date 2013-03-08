@@ -1,4 +1,4 @@
-h = require('../test-helper')
+h = require('../../test-helper')
 sql = h.requireSrc('sql')
 SqlFormatter = h.requireSrc('dialects/sql-formatter')
 

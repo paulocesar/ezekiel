@@ -1,7 +1,7 @@
 _ = require('more-underscore/src')
 
 engines = require('./engines.json')
-Database = require('./db/database')
+Database = require('./access/database')
 
 # We don't want users to instantiate Database directly for a number of reasons, but the fundamental
 # point is that we cannot guarantee a valid working instance without doing async work. Also, we may
