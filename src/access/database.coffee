@@ -12,6 +12,8 @@ class Database
         @adapter = @utils = null
         @tableGateways = {}
         @tableGatewayPrototypes = {}
+        @activeRecordPrototypes = {}
+        @context = {}
 
     getTableGateway: (alias) ->
         gw = @tableGateways[alias]
@@ -28,6 +30,12 @@ class Database
         gw = Object.create(proto)
         gw.db = @
         return (@tableGateways[alias] = gw)
+
+    newContext: (context) ->
+        newDb = Object.create(@)
+        newDb.context = context
+        newDb.tableGateways = {}
+        return newDb
 
     run: (stmt, cb) ->
         @execute(stmt, { onDone: () -> cb(null) }, cb)

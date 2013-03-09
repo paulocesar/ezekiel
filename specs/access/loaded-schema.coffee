@@ -36,3 +36,11 @@ describe 'Database with loaded schema', () ->
 
     it 'Exposes gateways via property', () ->
         assertGatewayProperty(alias) for alias of tables
+
+    it 'Supports creation of a new context', () ->
+        c = { loginId: 100 }
+        newDb = db.newContext(c)
+        newDb.context.should.eql(c)
+        for k, v of db
+            continue if k in ['context', 'tableGateways']
+            v.should.eql(newDb[k])
