@@ -4,24 +4,24 @@ _ = require('more-underscore/src')
 queryBinder = require('./query-binder')
 
 class TableGateway
-    constructor: (@db, @table) ->
+    constructor: (@db, @schema) ->
 
     findOne: () ->
         cb = _.lastIfFunction(arguments)
         keyValues = _.unwrapArgs(arguments, cb?)
          
-        q = sql.from(@table.alias)
+        q = sql.from(@schema.alias)
 
         if _.isObject(keyValues)
             q.where(keyValues)
         else
-            keys = @table.getKeysWithShape(keyValues)
+            keys = @schema.getKeysWithShape(keyValues)
             if keys.length == 0
-                error = "Could not find viable key in table #{@table} " +
+                error = "Could not find viable key in #{@schema} " +
                     "to be compared against values #{keyValues}"
                 return @doError(error, cb)
             else if keys.length > 1
-                error = "More than one key in table #{@table} " +
+                error = "More than one key in #{@schema} " +
                     " can be compared against values #{keyValues}"
                 return @doError(error, cb)
 

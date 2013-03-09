@@ -19,6 +19,7 @@ class Table extends AliasedObject
         @belongsTo = []
 
         @db.tables.push(@)
+        @many = @one = @alias
 
     siblingsByName: () -> @db.tablesByName
     siblingsByAlias: () -> @db.tablesByAlias

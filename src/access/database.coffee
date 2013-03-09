@@ -4,6 +4,7 @@ dbObjects = require('../schema')
 { DbSchema } = dbObjects
 { SqlToken } = require('../sql')
 TableGateway = require('./table-gateway')
+ActiveRecord = require('./active-record')
 
 class Database
     constructor: (@config = {}) ->
@@ -15,21 +16,34 @@ class Database
         @activeRecordPrototypes = {}
         @context = {}
 
-    getTableGateway: (alias) ->
-        gw = @tableGateways[alias]
+    getTableGateway: (many) ->
+        gw = @tableGateways[many]
         return gw if gw?
 
-        proto = @tableGatewayPrototypes[alias]
-        unless proto?
-            e = "Could not find a table gateway prototype for alias #{alias}. Make sure " +
-                "you have loaded a schema and check spelling and capitalization. " +
-                "You can inspect the tableGatewayPrototypes " +
-                "property to see the available prototypes keyed by alias. Good luck."
-            throw new Error(e)
+        proto = @getProtoOrThrow('tableGatewayPrototypes', many)
 
         gw = Object.create(proto)
         gw.db = @
-        return (@tableGateways[alias] = gw)
+        return (@tableGateways[many] = gw)
+
+    newObject: (one) ->
+        proto = @getProtoOrThrow('activeRecordPrototypes', one)
+        gw = @getTableGateway(proto.schema.many)
+
+        ar = Object.create(proto)
+        ar.attach(gw)
+        return ar
+
+    getProtoOrThrow: (propertyName, key) ->
+        proto = @[propertyName][key]
+        return proto if proto?
+
+        e = "Could not find an entry in #{propertyName} for #{key}. Make sure you " +
+            "have loaded a schema into this database instance and check spelling and " +
+            "capitalization. You can inspect the #{propertyName} property to see the available " +
+            "prototypes. Good luck."
+
+        throw new Error(e)
 
     newContext: (context) ->
         newDb = Object.create(@)
@@ -103,18 +117,19 @@ class Database
         @schema.load(schema)
 
         for t in @schema.tables
-            gw = new TableGateway(null, t)
-            alias = t.alias
-            @tableGatewayPrototypes[alias] = gw
+            @tableGatewayPrototypes[t.many] = new TableGateway(null, t)
+            @activeRecordPrototypes[t.one] = new ActiveRecord(null, t)
 
-            continue if @[alias]?
-
-            do (alias) =>
-                Object.defineProperty(@, alias, {
-                    get: () -> @getTableGateway(alias)
-                    configurable: false
-                })
+            @makeGatewayAccessor(t.many, @getTableGateway)
 
         return @schema
+
+    makeGatewayAccessor: (many) ->
+        return if @[many]?
+
+        Object.defineProperty(@, many, {
+            get: () -> @getTableGateway(many)
+            configurable: false
+        })
 
 module.exports = dbObjects.Database = Database

@@ -84,29 +84,6 @@ Object.defineProperty(AliasedObject.prototype, 'alias', {
     enumerable: true, configurable: false
 })
 
-class Table extends AliasedObject
-    constructor: (@db, schema) ->
-        super(schema)
-        @columns = []
-
-        @columnsByName = {}
-        @columnsByAlias = {}
-
-        @pk = null
-        @keys = []
-        @foreignKeys = []
-        @incomingFKs = []
-        @selfFKs = []
-
-        @hasMany = []
-        @belongsTo = []
-
-        @db.tables.push(@)
-
-    siblingsByName: () -> @db.tablesByName
-    siblingsByAlias: () -> @db.tablesByAlias
-
-
 jsTypes = {
     number:
         matchesType: _.isNumber
@@ -152,6 +129,8 @@ class Column extends AliasedObject
             @table.addEnforcingPosition(@table.columns, @)
         else
             @table.columns.push(@)
+
+        @property = @alias
 
     siblingsByName: () -> @table.columnsByName
     siblingsByAlias: () -> @table.columnsByAlias

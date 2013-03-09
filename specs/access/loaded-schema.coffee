@@ -2,6 +2,7 @@ h = require('../test-helper')
 require('../load-schema')
 
 TableGateway = h.requireSrc('access/table-gateway')
+ActiveRecord = h.requireSrc('access/active-record')
 
 db = schema = tables = null
 
@@ -24,18 +25,22 @@ assertGatewayProperty = (alias) ->
     gw = db[alias]
     assertGateway(gw, alias)
 
-assertGateway = (gw, alias) ->
+assertGateway = (gw, many) ->
     gw.should.be.an.instanceof(TableGateway)
     gw.db.should.eql(db)
-    gw.table.alias.should.eql(alias)
-    gw.table.should.eql(tables[alias])
+    gw.schema.many.should.eql(many)
+    gw.schema.should.eql(tables[many])
+
+assertNewObject = (one) ->
+    o = db.newObject(one)
+    o.should.be.an.instanceof(ActiveRecord)
 
 describe 'Database with loaded schema', () ->
     it 'Returns Table Gateways via getTableGateway()', () ->
-        assertGetTableGateway(alias) for alias of tables
+        assertGetTableGateway(many) for many of tables
 
     it 'Exposes gateways via property', () ->
-        assertGatewayProperty(alias) for alias of tables
+        assertGatewayProperty(many) for many of tables
 
     it 'Supports creation of a new context', () ->
         c = { loginId: 100 }
@@ -44,3 +49,7 @@ describe 'Database with loaded schema', () ->
         for k, v of db
             continue if k in ['context', 'tableGateways']
             v.should.eql(newDb[k])
+
+    it 'Exposes active records via newObject()', () ->
+        # MUST: have another collection keyed off 'one' names
+        assertNewObject(one) for one of tables
