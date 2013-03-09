@@ -23,6 +23,9 @@ describe 'TableGateway', () ->
         g = customerGateway()
         g.findOne(1, assertCustomerOne(done))
 
-    it 'Can postpone execution', (done) ->
+    it 'Can postpone query execution', (done) ->
         g = customerGateway()
         g.findOne(1).run(assertCustomerOne(done))
+
+    it 'Is accessible via database property', (done) ->
+        db.Customers.findOne(1, assertCustomerOne(done))

@@ -1,14 +1,33 @@
 _ = require('more-underscore/src')
 
 dbObjects = require('../schema')
-{ DbSchema, DbObject, Table, Column, Key, ForeignKey } = dbObjects
+{ DbSchema } = dbObjects
 { SqlToken } = require('../sql')
+TableGateway = require('./table-gateway')
 
 class Database
     constructor: (@config = {}) ->
         @schema = new DbSchema()
         @name = @config.database
         @adapter = @utils = null
+        @tableGateways = {}
+        @tableGatewayPrototypes = {}
+
+    getTableGateway: (alias) ->
+        gw = @tableGateways[alias]
+        return gw if gw?
+
+        proto = @tableGatewayPrototypes[alias]
+        unless proto?
+            e = "Could not find a table gateway prototype for alias #{alias}. Make sure " +
+                "you have loaded a schema and check spelling and capitalization. " +
+                "You can inspect the tableGatewayPrototypes " +
+                "property to see the available prototypes keyed by alias. Good luck."
+            throw new Error(e)
+
+        gw = Object.create(proto)
+        gw.db = @
+        return (@tableGateways[alias] = gw)
 
     run: (stmt, cb) ->
         @execute(stmt, { onDone: () -> cb(null) }, cb)
@@ -72,6 +91,22 @@ class Database
         opt = { onAllRows: (rows) -> callback(null, rows) }
         @execute(query, opt, callback)
 
-    loadSchema: (schema) -> @schema.load(schema)
+    loadSchema: (schema) ->
+        @schema.load(schema)
+
+        for t in @schema.tables
+            gw = new TableGateway(null, t)
+            alias = t.alias
+            @tableGatewayPrototypes[alias] = gw
+
+            continue if @[alias]?
+
+            do (alias) =>
+                Object.defineProperty(@, alias, {
+                    get: () -> @getTableGateway(alias)
+                    configurable: false
+                })
+
+        return @schema
 
 module.exports = dbObjects.Database = Database
