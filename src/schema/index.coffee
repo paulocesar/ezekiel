@@ -32,6 +32,7 @@ class DbObject
 # name. This makes it easy to develop and use Ezekiel, because you can always trust that
 # alias will be there. If you're not using aliases and/or virtual objects, then no harm done, all
 # aliases will equal names, and you're good to go.
+# MUST: remove the ability to change alias / name once schema object is instantiated
 class AliasedObject extends DbObject
     constructor: (schema) ->
         unless schema.name? || schema.alias?
