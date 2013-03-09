@@ -1,31 +1,57 @@
-CREATE TABLE dbo.Customers (
-	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Customers PRIMARY KEY CLUSTERED,
+CREATE TABLE dbo.Promotions (
+	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Promotions PRIMARY KEY CLUSTERED,
+	Name varchar(100) NOT NULL,
+)
+
+CREATE TABLE dbo.Fighters (
+	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Fighters PRIMARY KEY CLUSTERED,
 	FirstName varchar(100) NOT NULL,
-	LastName varchar(100) NOT NULL
+	LastName varchar(100) NOT NULL,
+	Nickname varchar(100) NOT NULL,
+	DOB datetime NOT NULL,
+	
+	CONSTRAINT UQ_Fighters_LastName_FirstName_NickName UNIQUE NONCLUSTERED (LastName, FirstName, Nickname)
 )
 
-CREATE TABLE dbo.Products (
-	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Products PRIMARY KEY CLUSTERED,
-	ProductName varchar(200) NOT NULL,
-	
-	CONSTRAINT UQ_Products_ProductName UNIQUE NONCLUSTERED (ProductName)
+CREATE TABLE dbo.Events (
+	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Events PRIMARY KEY CLUSTERED,
+	Name varchar(100) NOT NULL,
+	Date datetime NOT NULL,
+	PromotionId int NOT NULL,
+
+	CONSTRAINT FK_Events_Promotions FOREIGN KEY (PromotionId) REFERENCES Promotions,
 )
 
-CREATE TABLE dbo.Orders (
-	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Orders PRIMARY KEY CLUSTERED,
-	CustomerId int NOT NULL,
-	CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerId) REFERENCES Customers,
-	OrderDate datetime NOT NULL
+CREATE TABLE dbo.Fights (
+	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Fights PRIMARY KEY CLUSTERED,
+	EventId int NOT NULL,
+	
+	TookPlace bit NOT NULL,
+	EarlyStoppage bit NULL,
+	
+	WinnerId int NULL,
+	LoserId int NULL,
+	
+	DefendingFighterId int NOT NULL,
+	ContendingFighterId int NOT NULL,
+
+	CONSTRAINT FK_Fights_Events FOREIGN KEY (EventId) REFERENCES Events,
+	CONSTRAINT FK_Fights_Fighters_DefendingFighter FOREIGN KEY (DefendingFighterId) REFERENCES Fighters,
+	CONSTRAINT FK_Fights_Fighters_ContendingFighter FOREIGN KEY (ContendingFighterId) REFERENCES Fighters,
+	CONSTRAINT FK_Fights_Fighters_Winner FOREIGN KEY (WinnerId) REFERENCES Fighters,
+	CONSTRAINT FK_Fights_Fighters_Loser FOREIGN KEY (LoserId) REFERENCES Fighters,
 )
 
-CREATE TABLE dbo.OrderLines (
-	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_OrderLines PRIMARY KEY CLUSTERED,
+CREATE TABLE dbo.Rounds (
+	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Rounds PRIMARY KEY CLUSTERED,
+	FightId int NOT NULL,
+	Number int NOT NULL,
 	
-	OrderId int NOT NULL,
-	CONSTRAINT FK_OrdersLines_Orders FOREIGN KEY (OrderId) REFERENCES Orders,
-	LineNumber int NOT NULL,
-	CONSTRAINT UQ_OrderId_LineId UNIQUE NONCLUSTERED (OrderId, LineNumber),
+	FinalRound bit NOT NULL,
+	ScheduledDuration int NOT NULL,
+	ActualDuration int NOT NULL,
+	EarlyStoppage bit NULL,
 	
-	ProductId int NOT NULL,
-	CONSTRAINT FK_OrderLines_Products FOREIGN KEY (ProductId) REFERENCES Products
+	CONSTRAINT FK_Rounds_Fights FOREIGN KEY (FightId) REFERENCES Fights,
+	CONSTRAINT UQ_Rounds_FightId_Number UNIQUE NONCLUSTERED (FightId, Number)
 )
