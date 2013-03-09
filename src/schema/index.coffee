@@ -33,6 +33,22 @@ class DbObject
 # alias will be there. If you're not using aliases and/or virtual objects, then no harm done, all
 # aliases will equal names, and you're good to go.
 # MUST: remove the ability to change alias / name once schema object is instantiated
+# New rules will be:
+# 0. No name changing ever!
+# 1. Name will remain the database name, as we have now
+# 2. API into schema will be based on DB NAMES, so that people who don't want to worry about
+# aliasing don't even have to think about it. All operations using the schema classes will be keyed
+# off NAME.
+# 3. Tables will not have an 'alias' anymore. It is so confusing anyway, since it sounds like a SQL
+# alias, as in a SELECT statement. Tables will have two properties, 'many', and 'one', to name the
+# collections and the active record object. Many will give name to the table gateway and the FROM
+# name in SQL queries. One will give name to the active record. Both 'many' and 'one' will default
+# to name. Many and one will also be used by ActiveRecord when naming properties for relations.
+# 4. For columns, 'alias' will be replaced by 'property'
+# 5. No collections by many or one at first. Only by name, which is immutable (see 0), so no need
+# for property acrobatics
+# 6. Once the DB loads the schema, there'll be collections by many/one names. After you load a
+# schema into a DB, however, you can no longer mess with it, so we'll be ok.
 class AliasedObject extends DbObject
     constructor: (schema) ->
         unless schema.name? || schema.alias?
