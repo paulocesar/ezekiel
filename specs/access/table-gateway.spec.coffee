@@ -20,6 +20,8 @@ assertFighterOne = (done) -> (err, row) ->
     done()
 
 describe 'TableGateway', () ->
+    afterEach (done) -> h.cleanTestData(done)
+
     it 'Can be instantiated', () -> fighterGateway()
 
     it 'Is accessible via database property', (done) ->
@@ -47,4 +49,12 @@ describe 'TableGateway', () ->
             return done(err) if err
             db.fighters.count (err, cnt) ->
                 cnt.should.eql(cntFighters + 1)
-                h.cleanTestData(done)
+                done()
+
+    it 'Updates one row', (done) ->
+        db.fighters.updateOne { lastName: 'Da Silva' }, { id: 1 }, (err) ->
+            return done(err) if err
+            db.fighters.findOne 1, (err, row) ->
+                return done(err) if err
+                row.lastName.should.eql('Da Silva')
+                done()
