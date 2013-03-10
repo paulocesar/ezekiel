@@ -4,31 +4,38 @@ h = require('../test-helper')
 
 utils = null
 
+meta = h.getMetaData()
+
 checkTables = (tables) ->
-    names = _.map(tables, ((t) -> t.name))
-    names.should.eql(['Customers', 'OrderLines', 'Orders', 'Products'])
+    actual = _.map(tables, ((t) -> t.name))
+    expected = _.map(meta.tables, ((t) -> t.name))
+    actual.should.eql(expected)
 
 checkColumns = (columns) ->
-    columns.length.should.eql(12)
+    expected = meta.columns
+    columns.length.should.eql(expected.length)
     for c in columns
         should.exist(c.name)
         should.exist(c.tableName)
 
 checkKeys = (keys) ->
-    keys.length.should.eql(6)
+    expected = meta.keys
+    keys.length.should.eql(expected.length)
     for k in keys
         should.exist(k.name)
         should.exist(k.tableName)
 
 checkForeignKeys = (foreignKeys) ->
-    foreignKeys.length.should.eql(3)
+    expected = meta.foreignKeys
+    foreignKeys.length.should.eql(expected.length)
     for fk in foreignKeys
         should.exist(fk.name)
         should.exist(fk.parentKeyName)
         should.exist(fk.tableName)
 
 checkKeyColumns = (keyColumns) ->
-    keyColumns.length.should.eql(10)
+    expected = meta.keyColumns
+    keyColumns.length.should.eql(expected.length)
     for c in keyColumns
         should.exist(c.constraintName)
         should.exist(c.tableName)
@@ -111,6 +118,8 @@ describe('Schema functions', () ->
 
     it('reads all metadata', (done) ->
         utils.buildFullSchema((err, m) ->
+            #s = JSON.stringify(m, null, 4)
+            #require('fs').writeFileSync('./metadata.json', s)
             checkTables(m.tables)
             checkColumns(m.columns)
             checkKeys(m.keys)

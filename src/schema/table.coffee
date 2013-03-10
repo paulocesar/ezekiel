@@ -1,13 +1,12 @@
 _ = require('more-underscore/src')
-{ AliasedObject } = dbObjects = require('./index')
+{ DbObject, Column } = dbObjects = require('./index')
 
-class Table extends AliasedObject
+class Table extends DbObject
     constructor: (@db, schema) ->
         super(schema)
         @columns = []
 
         @columnsByName = {}
-        @columnsByAlias = {}
 
         @pk = null
         @keys = []
@@ -18,11 +17,13 @@ class Table extends AliasedObject
         @hasMany = []
         @belongsTo = []
 
-        @db.tables.push(@)
-        @many = @one = @alias
+        if @name of @db.tablesByName
+          e = "There is already a table named #{@name} in #{@db}"
+          throw new Error(e)
 
-    siblingsByName: () -> @db.tablesByName
-    siblingsByAlias: () -> @db.tablesByAlias
+        @db.tables.push(@)
+        @db.tablesByName[@name] = @
+        @many = @one = @name
 
     getKeysWithShape: () ->
         values = _.unwrapArgs(arguments)
@@ -32,5 +33,8 @@ class Table extends AliasedObject
             throw new Error(e)
 
         return (k for k in @keys when k.matchesType(values))
+
+    column: (schema) -> new Column(@, schema)
+
 
 module.exports = dbObjects.Table = Table

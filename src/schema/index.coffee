@@ -2,11 +2,13 @@ _ = require('more-underscore/src')
 
 class DbObject
     constructor: (schema) ->
+        unless schema.name?
+            throw new Error("You must provide a name for each schema object")
+
         _.defaults(@, schema)
 
     toString: () ->
         s = "#{@constructor.name}: name='#{@name}'"
-        s += ", alias='#{@alias}'" if (@alias?)
         return s
 
     addEnforcingPosition: (array, newbie, position = newbie.position) ->
@@ -49,40 +51,6 @@ class DbObject
 # for property acrobatics
 # 6. Once the DB loads the schema, there'll be collections by many/one names. After you load a
 # schema into a DB, however, you can no longer mess with it, so we'll be ok.
-class AliasedObject extends DbObject
-    constructor: (schema) ->
-        unless schema.name? || schema.alias?
-            throw new Error("You must provide a name and/or an alias")
-
-        super(schema)
-        @alias ?= @name
-
-    updateIndexedProperty: (siblings, prop, newValue) ->
-        oldValue = @[prop]
-        if (oldValue == newValue)
-            return
-
-        clash = siblings[newValue]
-        if clash?
-            msg = "Can't change #{@} to new #{prop.substring(1)} '#{newValue}' " +
-                "because it is already taken by #{clash}"
-            throw new Error(msg)
-
-        delete siblings[oldValue] if oldValue?
-        siblings[newValue] = @
-        @[prop] = newValue
-
-Object.defineProperty(AliasedObject.prototype, 'name', {
-    get: () -> @_name
-    set: (newName) -> @updateIndexedProperty(@siblingsByName(), '_name', newName)
-    enumerable: true, configurable: false
-})
-
-Object.defineProperty(AliasedObject.prototype, 'alias', {
-    get: () -> @_alias
-    set: (newAlias) -> @updateIndexedProperty(@siblingsByAlias(), '_alias', newAlias)
-    enumerable: true, configurable: false
-})
 
 jsTypes = {
     number:
@@ -116,7 +84,7 @@ dbTypeToJsType = {
     int: 'number'
 }
 
-class Column extends AliasedObject
+class Column extends DbObject
     constructor: (@table, schema) ->
         super(schema)
 
@@ -130,10 +98,9 @@ class Column extends AliasedObject
         else
             @table.columns.push(@)
 
-        @property = @alias
+        @property = @name
+        @table.columnsByName[@name] = @
 
-    siblingsByName: () -> @table.columnsByName
-    siblingsByAlias: () -> @table.columnsByAlias
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
 
     matchesType: (v) -> @jsType.matchesType(v)
@@ -196,7 +163,7 @@ class Key extends Constraint
         o = {}
         for c, i in @columns
             v = if i == 0 then _.firstOrSelf(keyValues) else keyValues[i]
-            o[c.alias] = v
+            o[c.property] = v
 
         return o
 
@@ -223,7 +190,7 @@ class ForeignKey extends Constraint
 
 
 
-module.exports = { DbObject, AliasedObject, Column, Key, ForeignKey, Constraint }
+module.exports = { DbObject, Column, Key, ForeignKey, Constraint }
 
 require('./table')
 require('./db-schema')

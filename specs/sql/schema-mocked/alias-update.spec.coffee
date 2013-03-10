@@ -4,16 +4,15 @@ SqlFormatter = h.requireSrc('dialects/sql-formatter')
 
 describe 'SqlUpdate with aliased schema', () ->
     it 'handles basic UPDATE', ->
-        s = sql.update('tblCustomers', { colFirstName: 'Lucius' }, { colLastName: 'Malfoy' })
-
-        e = "UPDATE [Customers] SET [FirstName] = 'Lucius' WHERE [LastName] = 'Malfoy'"
-
+        s = sql.update('fighters', { firstName: 'Chael' }, { lastName: 'Sonnen' })
+        e = "UPDATE [Fighters] SET [FirstName] = 'Chael' WHERE [LastName] = 'Sonnen'"
         h.assertAlias(s, e)
 
     it 'filters out properties that do not correspond to columns', ->
-        s = sql.update('tblCustomers', { colFirstName: 'Lucius', houseKeeping: true },
-            { colLastName: 'Malfoy' })
+        s = sql.update('fighters', { firstName: 'Rodrigo', houseKeeping: true },
+            { lastName: 'Minotauro', weightInLb: ">": 205 })
 
-        e = "UPDATE [Customers] SET [FirstName] = 'Lucius' WHERE [LastName] = 'Malfoy'"
+        e = "UPDATE [Fighters] SET [FirstName] = 'Rodrigo' WHERE ([LastName] = 'Minotauro' " +
+            "AND [WeightInLb] > 205)"
 
         h.assertAlias(s, e)

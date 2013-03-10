@@ -3,53 +3,19 @@ path = require('path')
 _ = require('more-underscore/src')
 async = require('async')
 
-sql = require('../src/sql')
-
 testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
 requireSrc = (pathToFile) -> require(path.resolve(sourceFolder, pathToFile))
 
-SqlFormatter = requireSrc('dialects/sql-formatter')
 ezekiel = requireSrc()
+sql = requireSrc('sql')
+SqlFormatter = requireSrc('dialects/sql-formatter')
 Database = requireSrc('access/database')
+DbSchema = requireSrc('schema/db-schema')
 
 debug = false
 sharedDb = null
 defaultEngine = 'mssql'
-
-newSchema = -> {
-    tables: [
-        { name: 'Customers', }
-        { name: 'Orders' }
-    ]
-    columns: [
-        { tableName: 'Customers', name: 'Id', position: 1 }
-        { tableName: 'Customers', name: 'FirstName', position: 2 }
-        { tableName: 'Customers', name: 'LastName', position: 3 }
-    ]
-    keys: [
-        { type: 'PRIMARY KEY', tableName: 'Customers', name: 'PK_Customers' }
-    ]
-    foreignKeys: []
-    keyColumns: [
-        { columnName: 'Id', tableName: 'Customers', position: 1, constraintName: 'PK_Customers' }
-    ]
-}
-
-newAliasedSchema = -> {
-    tables: [
-        { name: 'Customers', alias: 'tblCustomers' }
-        { name: 'Orders', alias: 'tblOrders' }
-    ]
-    columns: [
-        { tableName: 'Customers', name: 'Id', alias: 'colId', position: 1 }
-        { tableName: 'Customers', name: 'FirstName', alias: 'colFirstName', position: 2 }
-        { tableName: 'Customers', name: 'LastName', alias: 'colLastName', position: 3 }
-    ]
-    keys: []
-    foreignKeys: []
-    keyColumns: []
-}
 
 blankDb = () ->
     db = new Database({ database: 'blank' })
@@ -59,17 +25,20 @@ blankDb = () ->
 aliasedDb = () ->
     db = new Database({database: 'alias'})
     db.Formatter = SqlFormatter
-    db.loadSchema(newAliasedSchema())
+    db.loadSchema(newCookedSchema())
     return db
+
+setupTestData = () ->
+
 
 schemaDb = () ->
     db = new Database( {database: 'withSchema' })
     db.Formatter = SqlFormatter
-    db.loadSchema(newSchema())
+    db.loadSchema(newRawSchema())
     return db
 
-assertSqlFormatting = (db, sql, expected, debug) ->
-    f = new SqlFormatter(db)
+assertSqlFormatting = (schema, sql, expected, debug) ->
+    f = new SqlFormatter(schema)
     ret = f.format(sql)
     if (ret != expected) || debug
         console.log("--- Return ---")
@@ -96,23 +65,63 @@ before((done) ->
     )
 )
 
+metaData = null
+getMetaData = () ->
+    return metaData if metaData?
+    return (metaData = require('./data/metadata'))
+
+rawSchema = null
+getRawSchema = () ->
+    return rawSchema if rawSchema?
+    return (rawSchema = newRawSchema())
+
+newRawSchema = () ->
+    s = new DbSchema()
+    s.load(getMetaData())
+    return s.finish()
+
+cookedSchema = null
+getCookedSchema = () ->
+    return cookedSchema if cookedSchema?
+    return (cookedSchema = newCookedSchema())
+
+newCookedSchema = () ->
+    s = new DbSchema()
+    s.load(getMetaData())
+    return cookSchema(s)
+
+cookSchema = (s) ->
+    for t in s.tables
+       t.one = _.chain(t.name).toSingular().toLowerInitial().value()
+       t.many = _.chain(t.name).toPlural().toLowerInitial().value()
+       for c in t.columns
+           c.property = _.toLowerInitial(c.name)
+
+    return s.finish()
+
 module.exports = {
     testConfig
     requireSrc
+    testData: require('./data/test-data')
     defaultDbConfig: testConfig.databases[defaultEngine]
 
     assertSqlFormatting
-    assertSql: (sql, expected, debug) -> assertSqlFormatting(blankDb(), sql, expected, debug)
-    assertSchemaSql: (sql, expected, debug) -> assertSqlFormatting(schemaDb(), sql, expected, debug)
-    assertAlias: (sql, expected, debug) -> assertSqlFormatting(aliasedDb(), sql, expected, debug)
+    assertSql: (sql, expected, debug) -> assertSqlFormatting(null, sql, expected, debug)
+    assertSchemaSql: (sql, expected, debug) -> assertSqlFormatting(getRawSchema(), sql, expected, debug)
+    assertAlias: (sql, expected, debug) -> assertSqlFormatting(getCookedSchema(), sql, expected, debug)
 
     dump: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
 
     getSharedDb: (engine = defaultEngine) -> sharedDb
     connectToDb
 
-    newSchema
-    newAliasedSchema
+    getMetaData
+    getRawSchema
+    newRawSchema
+    getCookedSchema
+    newCookedSchema
+    cookSchema
+
     blankDb
     schemaDb
     aliasedDb,

@@ -1,16 +1,21 @@
 CREATE TABLE dbo.Promotions (
 	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Promotions PRIMARY KEY CLUSTERED,
 	Name varchar(100) NOT NULL,
+	CONSTRAINT UQ_Promotions_Name UNIQUE NONCLUSTERED (Name)
 )
 
 CREATE TABLE dbo.Fighters (
 	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Fighters PRIMARY KEY CLUSTERED,
 	FirstName varchar(100) NOT NULL,
 	LastName varchar(100) NOT NULL,
-	Nickname varchar(100) NOT NULL,
 	DOB datetime NOT NULL,
+	Country varchar(100) NOT NULL,
+	HeightInCm int NOT NULL,
+	ReachInCm int NOT NULL,
+	WeightInLb int NOT NULL,
 	
-	CONSTRAINT UQ_Fighters_LastName_FirstName_NickName UNIQUE NONCLUSTERED (LastName, FirstName, Nickname)
+	-- not realistic, just for unit testing
+	CONSTRAINT UQ_Fighters_LastName_FirstName UNIQUE NONCLUSTERED (LastName, FirstName)
 )
 
 CREATE TABLE dbo.Events (
@@ -26,8 +31,14 @@ CREATE TABLE dbo.Fights (
 	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Fights PRIMARY KEY CLUSTERED,
 	EventId int NOT NULL,
 	
+	WeightInLb int NOT NULL,
 	TookPlace bit NOT NULL,
-	EarlyStoppage bit NULL,
+	EarlyStoppage bit NOT NULL,
+	TitleFight bit NOT NULL,
+	CatchWeight bit NOT NULL,
+	Knockout bit NOT NULL,
+	Submission bit NOT NULL,
+	Draw bit NOT NULL,
 	
 	WinnerId int NULL,
 	LoserId int NULL,
@@ -43,7 +54,6 @@ CREATE TABLE dbo.Fights (
 )
 
 CREATE TABLE dbo.Rounds (
-	Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Rounds PRIMARY KEY CLUSTERED,
 	FightId int NOT NULL,
 	Number int NOT NULL,
 	
@@ -52,6 +62,6 @@ CREATE TABLE dbo.Rounds (
 	ActualDuration int NOT NULL,
 	EarlyStoppage bit NULL,
 	
+	CONSTRAINT PK_ROUNDS PRIMARY KEY CLUSTERED (FightId, Number),
 	CONSTRAINT FK_Rounds_Fights FOREIGN KEY (FightId) REFERENCES Fights,
-	CONSTRAINT UQ_Rounds_FightId_Number UNIQUE NONCLUSTERED (FightId, Number)
 )

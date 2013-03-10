@@ -1,21 +1,16 @@
 h = require('../test-helper')
+require('../live-db')
 sql = h.requireSrc('sql')
-testDb = null
+
+db = null
+before () ->
+    db = h.liveDb
 
 describe('Database using sql.* tokens', () ->
-    before((done) ->
-        h.connectToDb((db) ->
-            testDb = db
-            testDb.loadSchema(h.newAliasedSchema())
-            done()
-        )
-    )
-
-    it 'performs a SELECT query against Customers', (done) ->
-        s = sql.select('colId', 'colFirstName').from('tblCustomers')
-        testDb.allRows(s, (err, rows) ->
-            if err?
-                throw new Error(err)
+    it 'performs a SELECT query against Fighters', (done) ->
+        s = sql.select('id', 'firstName').from('fighters')
+        db.allRows(s, (err, rows) ->
+            return done(err) if err
             rows.should.be.instanceOf(Array)
             done()
         )

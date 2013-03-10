@@ -1,34 +1,36 @@
 h = require('../test-helper')
-require('../load-schema')
+require('../live-db')
 
 { DbSchema, Table, Column } = h.requireSrc('schema')
 
 schema = null
 tables = null
 before () ->
-    schema = h.db.schema
-    tables = schema.tablesByAlias
+    schema = h.liveDb.schema
+    tables = schema.tablesByMany
 
-assertUniqLine = (a) ->
+assertUniq = (uq, a) ->
     a.should.not.be.empty
-    a[0].name.should.eql('UQ_OrderId_LineId')
+    a.should.eql([uq])
 
 describe 'Table', () ->
     it 'Finds single keys by their shape', () ->
-        customers = tables.Customers
+        promotions = tables.promotions
 
-        customers.getKeysWithShape('fonzo').should.eql([])
-        customers.getKeysWithShape(10).should.eql([customers.pk])
+        uq = schema.constraintsByName.UQ_Promotions_Name
+        assertUniq(uq, promotions.getKeysWithShape('UFC'))
+        promotions.getKeysWithShape(10).should.eql([promotions.pk])
 
-        orders = tables.Orders
-        orders.getKeysWithShape(1).should.eql([orders.pk])
+        fighters = tables.fighters
+        fighters.getKeysWithShape(1).should.eql([fighters.pk])
 
-        orderLines = tables.OrderLines
-        orderLines.getKeysWithShape(1).should.eql([orderLines.pk])
+        fights = tables.fights
+        fights.getKeysWithShape(1).should.eql([fights.pk])
 
     it 'Finds composite keys by the types of its values', () ->
-        orderLines = tables.OrderLines
+        rounds = tables.rounds
 
-        assertUniqLine(orderLines.getKeysWithShape(10, 10))
-        assertUniqLine(orderLines.getKeysWithShape([10, 10]))
+        pk = tables.rounds.pk
+        assertUniq(pk, rounds.getKeysWithShape(10, 10))
+        assertUniq(pk, rounds.getKeysWithShape([10, 10]))
 

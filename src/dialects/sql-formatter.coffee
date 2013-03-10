@@ -19,8 +19,9 @@ operatorAliases = {
     '!=': '<>'
 }
 
+# MUST: take Schema rather than db
 class SqlFormatter
-    constructor: (@db) ->
+    constructor: (@schema) ->
         @sources = []
 
     f: (v) ->
@@ -96,7 +97,7 @@ class SqlFormatter
                 prefix = @f(tableToken) + '.'
 
             parts = for c in schema.columns
-                "#{prefix}#{@delimit(c.name)} as #{@delimit(c.alias)}"
+                "#{prefix}#{@delimit(c.name)} as #{@delimit(c.property)}"
 
             return parts.join(', ')
         else
@@ -138,7 +139,7 @@ class SqlFormatter
             return alias
 
         if schema?
-            return schema.alias
+            return schema.many ? schema.property
 
         return null
 
@@ -258,21 +259,21 @@ class SqlFormatter
     cacheTokenFor: (e) -> e._token = @tokenizeAtom(e.atom)
 
     _findTableSchema: (token) ->
-        unless token instanceof SqlFullName
+        unless @schema? && token instanceof SqlFullName
             return null
 
-        return @db.schema.tablesByAlias[token.tip()] ? null
+        return @schema.tablesByMany[token.tip()] ? null
 
     _findColumnSchema: (token) ->
-        unless token instanceof SqlFullName
+        unless @schema? && token instanceof SqlFullName
             return
 
         table = token.prefix()
         if table?
-            return @db.schema.tablesByAlias[table]?.columnsByAlias[token.tip()]
+            return @schema.tablesByMany[table]?.columnsByProperty[token.tip()]
 
         for t in @sources when t._schema?
-            column = t._schema.columnsByAlias[token.tip()]
+            column = t._schema.columnsByProperty[token.tip()]
             if column?
                 return column
 
@@ -324,12 +325,12 @@ class SqlFormatter
         return false
 
     _joinByFk: (j, fk) ->
-        childAlias = fk.table.alias
-        parentAlias = fk.parentTable.alias
+        childAlias = fk.table.many
+        parentAlias = fk.parentTable.many
         parentKey = fk.parentKey
 
         terms = (for c, i in fk.columns
-            [sql.name(childAlias, c.alias), sql.name(parentAlias, parentKey.columns[i].alias)]
+            [sql.name(childAlias, c.property), sql.name(parentAlias, parentKey.columns[i].property)]
         )
         j.predicate = sql.and(terms...)
 

@@ -1,18 +1,38 @@
 _ = require('more-underscore/src')
-{ DbObject, AliasedObject, Table, Column, Key, ForeignKey } = dbObjects = require('./index')
+{ DbObject, Table, Column, Key, ForeignKey } = dbObjects = require('./index')
 
 class DbSchema extends DbObject
     constructor: (schema) ->
         @tables = []
         @tablesByName = {}
-        @tablesByAlias = {}
         @constraintsByName = {}
 
         @load(schema) if schema?
 
+    # MUST: make sure there's no clash in many
+    finish: () ->
+        @tablesByMany = {}
+        @tablesByOne = {}
+        for t in @tables
+            @assertUniqHandle(t, t.many, @tablesByMany)
+            @tablesByMany[t.many] = t
+
+            @assertUniqHandle(t, t.one, @tablesByOne)
+            @tablesByOne[t.one] = t
+            t.columnsByProperty = columns = {}
+            for c in t.columns
+                columns[c.property] = c
+
+        return @
+
+    assertUniqHandle: (t, key, store) ->
+        return unless key of store
+        e = "Tables #{t} and #{store[key]} have the same handle of #{key}"
+        throw new Error(e)
+
     load: (schema) ->
         @addSchemaItems(Table, schema.tables, @)
-        @tables = _.sortBy(@tables, (t) -> t.alias)
+        @tables = _.sortBy(@tables, (t) -> t.name)
         @addSchemaItems(Column, schema.columns)
         @addSchemaItems(Key, schema.keys)
         @addSchemaItems(ForeignKey, schema.foreignKeys)
@@ -30,6 +50,10 @@ class DbSchema extends DbObject
     addKeyColumns: (list) ->
         for i in list
             c = @constraintsByName[i.constraintName]
+            unless c?
+                console.log(@constraintsByName, i)
             c.addColumn(i)
+
+    table: (schema) -> new Table(@, schema)
 
 module.exports = dbObjects.DbSchema = DbSchema

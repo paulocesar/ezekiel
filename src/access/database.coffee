@@ -6,9 +6,12 @@ dbObjects = require('../schema')
 TableGateway = require('./table-gateway')
 ActiveRecord = require('./active-record')
 
+# MUST: take schema as config object or never again. Ezekiel will take care of reading schema files
+# or loading meta data from the database.
+#
 class Database
     constructor: (@config = {}) ->
-        @schema = new DbSchema()
+        @schema = @config.schema ? null
         @name = @config.database
         @adapter = @utils = null
         @tableGateways = {}
@@ -54,6 +57,11 @@ class Database
     run: (stmt, cb) ->
         @execute(stmt, { onDone: () -> cb(null) }, cb)
 
+    noData: (stmt, cb) ->
+        @execute(stmt, { onDone: () -> cb(null) }, cb)
+
+    # MUST: add oneObject(), tryOneObject(), streamRows(), streamObjects()
+
     scalar: (query, cb) -> @_selectOneRow(query, 'array', false, cb)
     tryScalar: (query, cb) -> @_selectOneRow(query, 'array', true, cb)
 
@@ -86,7 +94,7 @@ class Database
             o.stmt = @format(o.stmt)
 
     format: (sql) ->
-        f = new @Formatter(@)
+        f = new @Formatter(@schema)
         return f.format(sql)
 
     execute: (query, opt, callback) ->
@@ -114,7 +122,7 @@ class Database
         @execute(query, opt, callback)
 
     loadSchema: (schema) ->
-        @schema.load(schema)
+        @schema = schema.finish()
 
         for t in @schema.tables
             @tableGatewayPrototypes[t.many] = new TableGateway(null, t)
@@ -124,11 +132,11 @@ class Database
 
         return @schema
 
-    makeGatewayAccessor: (many) ->
-        return if @[many]?
+    makeGatewayAccessor: (key) ->
+        return if key of @
 
-        Object.defineProperty(@, many, {
-            get: () -> @getTableGateway(many)
+        Object.defineProperty(@, key, {
+            get: () -> @getTableGateway(key)
             configurable: false
         })
 

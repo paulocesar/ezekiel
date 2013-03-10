@@ -13,7 +13,11 @@ Database = require('./access/database')
 # a mess for the caller to correctly check for errors. We go for this little factory instead, and as
 # a bonus we can implement methods that create a DB before connecting to it, stuff like that.
 #
-# Database can still be instantiated directly in tests and for advanced users.
+# Database can still be instantiated directly in tests and by advanced users.
+# Schema can be true to load directly from database, string with file path to load from file, or
+# schema object directly.
+# processSchema is a function that gets a shot at the schema before the DB binds it. This is useful
+# for specifying custom one/many names for tables, property names for columns, etc.
 
 e = ezekiel = {
     connect: (config, cb) ->

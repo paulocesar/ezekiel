@@ -1,0 +1,540 @@
+{
+    "tables": [
+        {
+            "name": "Events"
+        },
+        {
+            "name": "Fighters"
+        },
+        {
+            "name": "Fights"
+        },
+        {
+            "name": "Promotions"
+        },
+        {
+            "name": "Rounds"
+        }
+    ],
+    "columns": [
+        {
+            "tableName": "Events",
+            "name": "Id",
+            "position": 1,
+            "isIdentity": 1,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Events",
+            "name": "Name",
+            "position": 2,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "varchar",
+            "maxLength": 100
+        },
+        {
+            "tableName": "Events",
+            "name": "Date",
+            "position": 3,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "datetime",
+            "maxLength": null
+        },
+        {
+            "tableName": "Events",
+            "name": "PromotionId",
+            "position": 4,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fighters",
+            "name": "Id",
+            "position": 1,
+            "isIdentity": 1,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fighters",
+            "name": "FirstName",
+            "position": 2,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "varchar",
+            "maxLength": 100
+        },
+        {
+            "tableName": "Fighters",
+            "name": "LastName",
+            "position": 3,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "varchar",
+            "maxLength": 100
+        },
+        {
+            "tableName": "Fighters",
+            "name": "DOB",
+            "position": 4,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "datetime",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fighters",
+            "name": "Country",
+            "position": 5,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "varchar",
+            "maxLength": 100
+        },
+        {
+            "tableName": "Fighters",
+            "name": "HeightInCm",
+            "position": 6,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fighters",
+            "name": "ReachInCm",
+            "position": 7,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fighters",
+            "name": "WeightInLb",
+            "position": 8,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "Id",
+            "position": 1,
+            "isIdentity": 1,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "EventId",
+            "position": 2,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "WeightInLb",
+            "position": 3,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "TookPlace",
+            "position": 4,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "EarlyStoppage",
+            "position": 5,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "TitleFight",
+            "position": 6,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "CatchWeight",
+            "position": 7,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "Knockout",
+            "position": 8,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "Submission",
+            "position": 9,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "Draw",
+            "position": 10,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "WinnerId",
+            "position": 11,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": true,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "LoserId",
+            "position": 12,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": true,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "DefendingFighterId",
+            "position": 13,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Fights",
+            "name": "ContendingFighterId",
+            "position": 14,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Promotions",
+            "name": "Id",
+            "position": 1,
+            "isIdentity": 1,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Promotions",
+            "name": "Name",
+            "position": 2,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "varchar",
+            "maxLength": 100
+        },
+        {
+            "tableName": "Rounds",
+            "name": "FightId",
+            "position": 1,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Rounds",
+            "name": "Number",
+            "position": 2,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Rounds",
+            "name": "FinalRound",
+            "position": 3,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "bit",
+            "maxLength": null
+        },
+        {
+            "tableName": "Rounds",
+            "name": "ScheduledDuration",
+            "position": 4,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Rounds",
+            "name": "ActualDuration",
+            "position": 5,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": false,
+            "dbDataType": "int",
+            "maxLength": null
+        },
+        {
+            "tableName": "Rounds",
+            "name": "EarlyStoppage",
+            "position": 6,
+            "isIdentity": 0,
+            "isComputed": 0,
+            "isNullable": true,
+            "dbDataType": "bit",
+            "maxLength": null
+        }
+    ],
+    "keys": [
+        {
+            "name": "PK_Fighters",
+            "tableName": "Fighters",
+            "type": "PRIMARY KEY"
+        },
+        {
+            "name": "UQ_Fighters_LastName_FirstName",
+            "tableName": "Fighters",
+            "type": "UNIQUE"
+        },
+        {
+            "name": "PK_Events",
+            "tableName": "Events",
+            "type": "PRIMARY KEY"
+        },
+        {
+            "name": "PK_Fights",
+            "tableName": "Fights",
+            "type": "PRIMARY KEY"
+        },
+        {
+            "name": "PK_ROUNDS",
+            "tableName": "Rounds",
+            "type": "PRIMARY KEY"
+        },
+        {
+            "name": "PK_Promotions",
+            "tableName": "Promotions",
+            "type": "PRIMARY KEY"
+        },
+        {
+            "name": "UQ_Promotions_Name",
+            "tableName": "Promotions",
+            "type": "UNIQUE"
+        }
+    ],
+    "foreignKeys": [
+        {
+            "name": "FK_Events_Promotions",
+            "parentKeyName": "PK_Promotions",
+            "tableName": "Events",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Fights_Events",
+            "parentKeyName": "PK_Events",
+            "tableName": "Fights",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Fights_Fighters_DefendingFighter",
+            "parentKeyName": "PK_Fighters",
+            "tableName": "Fights",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Fights_Fighters_ContendingFighter",
+            "parentKeyName": "PK_Fighters",
+            "tableName": "Fights",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Fights_Fighters_Winner",
+            "parentKeyName": "PK_Fighters",
+            "tableName": "Fights",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Fights_Fighters_Loser",
+            "parentKeyName": "PK_Fighters",
+            "tableName": "Fights",
+            "type": "FOREIGN KEY"
+        },
+        {
+            "name": "FK_Rounds_Fights",
+            "parentKeyName": "PK_Fights",
+            "tableName": "Rounds",
+            "type": "FOREIGN KEY"
+        }
+    ],
+    "keyColumns": [
+        {
+            "constraintName": "FK_Events_Promotions",
+            "tableName": "Events",
+            "columnName": "PromotionId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Fights_Events",
+            "tableName": "Fights",
+            "columnName": "EventId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Fights_Fighters_ContendingFighter",
+            "tableName": "Fights",
+            "columnName": "ContendingFighterId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Fights_Fighters_DefendingFighter",
+            "tableName": "Fights",
+            "columnName": "DefendingFighterId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Fights_Fighters_Loser",
+            "tableName": "Fights",
+            "columnName": "LoserId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Fights_Fighters_Winner",
+            "tableName": "Fights",
+            "columnName": "WinnerId",
+            "position": 1
+        },
+        {
+            "constraintName": "FK_Rounds_Fights",
+            "tableName": "Rounds",
+            "columnName": "FightId",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_Events",
+            "tableName": "Events",
+            "columnName": "Id",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_Fighters",
+            "tableName": "Fighters",
+            "columnName": "Id",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_Fights",
+            "tableName": "Fights",
+            "columnName": "Id",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_Promotions",
+            "tableName": "Promotions",
+            "columnName": "Id",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_ROUNDS",
+            "tableName": "Rounds",
+            "columnName": "FightId",
+            "position": 1
+        },
+        {
+            "constraintName": "PK_ROUNDS",
+            "tableName": "Rounds",
+            "columnName": "Number",
+            "position": 2
+        },
+        {
+            "constraintName": "UQ_Fighters_LastName_FirstName",
+            "tableName": "Fighters",
+            "columnName": "LastName",
+            "position": 1
+        },
+        {
+            "constraintName": "UQ_Fighters_LastName_FirstName",
+            "tableName": "Fighters",
+            "columnName": "FirstName",
+            "position": 2
+        },
+        {
+            "constraintName": "UQ_Promotions_Name",
+            "tableName": "Promotions",
+            "columnName": "Name",
+            "position": 1
+        }
+    ]
+}

@@ -10,7 +10,7 @@ class TableGateway
         cb = _.lastIfFunction(arguments)
         keyValues = _.unwrapArgs(arguments, cb?)
          
-        q = sql.from(@schema.alias)
+        q = sql.from(@schema.many)
 
         if _.isObject(keyValues)
             q.where(keyValues)
