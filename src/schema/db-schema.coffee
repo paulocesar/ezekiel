@@ -9,7 +9,6 @@ class DbSchema extends DbObject
 
         @load(schema) if schema?
 
-    # MUST: make sure there's no clash in many
     finish: () ->
         @tablesByMany = {}
         @tablesByOne = {}

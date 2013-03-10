@@ -21,36 +21,25 @@ class DbObject
 
         array.push(newbie)
 
-# Many DB objects can have aliases in JavaScript land to allow folks to keep their JS independent of
-# the actual database schema. For example, tables, columns, and views can all be aliased.
+# Many DB objects can have handles in JavaScript land to decouple JS code from DB schema. For
+# example, tables can have a 'many' handle and a 'one' handle (to be used with collections and
+# single objects, respectively). The many handle is used to access the table gateway and in FROM
+# / JOIN clauses backed by the schema. The one handle is used to retrieve ActiveRecord instances.
 #
-# The 'name' property in an object is ALWAYS its name in the database. The 'alias' property defaults
-# to the name, but you're free to change it to whatever naming convention you like best.  It is
-# possible to define objects that do not have a name because they don't actually exist in the DB.
-# They are called 'virtual'. For example, you could define a virtual column that has an alias and
-# whose value is a SQL expression, and this column would not have a name.
+# Columns can have a 'property' handle, which is used as the column name in schema-backed queries
+# and name of the property encapsulating the column in an ActiveRecord instance.
 #
-# However, EVERY object must have an alias, If one is not provided, we set the alias equal to the
-# name. This makes it easy to develop and use Ezekiel, because you can always trust that
-# alias will be there. If you're not using aliases and/or virtual objects, then no harm done, all
-# aliases will equal names, and you're good to go.
-# MUST: remove the ability to change alias / name once schema object is instantiated
-# New rules will be:
-# 0. No name changing ever!
-# 1. Name will remain the database name, as we have now
-# 2. API into schema will be based on DB NAMES, so that people who don't want to worry about
-# aliasing don't even have to think about it. All operations using the schema classes will be keyed
-# off NAME.
-# 3. Tables will not have an 'alias' anymore. It is so confusing anyway, since it sounds like a SQL
-# alias, as in a SELECT statement. Tables will have two properties, 'many', and 'one', to name the
-# collections and the active record object. Many will give name to the table gateway and the FROM
-# name in SQL queries. One will give name to the active record. Both 'many' and 'one' will default
-# to name. Many and one will also be used by ActiveRecord when naming properties for relations.
-# 4. For columns, 'alias' will be replaced by 'property'
-# 5. No collections by many or one at first. Only by name, which is immutable (see 0), so no need
-# for property acrobatics
-# 6. Once the DB loads the schema, there'll be collections by many/one names. After you load a
-# schema into a DB, however, you can no longer mess with it, so we'll be ok.
+# The 'name' property in a schema object is ALWAYS its name in the database. If no handles are
+# provided, the table name is be used for the table in both many and one situations. The column
+# name is used as the JS property name. Thus people can be 100% oblivious to the handle mechanism
+# and stuff just works. Those who want to be able to say pretty things like:
+#
+# db.customers.findMany()
+# db.customer(100, cb)
+#
+# Must set many/one in tables and property in columns as they see fit.
+#
+# The schema API however ALWAYS WORKS WITH NAMES to ensure sanity. Names are immutable.
 
 jsTypes = {
     number:
