@@ -156,6 +156,8 @@ class Key extends Constraint
 
         return o
 
+    coveredBy: (values) -> _.every(@columns, (c) -> c.property of values)
+
 class ForeignKey extends Constraint
     constructor: (@table, schema) ->
         super(@table, schema)

@@ -31,3 +31,7 @@ describe 'Key', () ->
 
     it 'knows that a column in a composite PK is not the full PK', ->
         tables.rounds.columnsByProperty.fightId.isFullPrimaryKey().should.be.false
+
+    it 'knows whether an object covers it', ->
+        tables.rounds.pk.coveredBy({fightId: 10}).should.be.false
+        tables.rounds.pk.coveredBy({fightId: 10, number: 2}).should.be.true

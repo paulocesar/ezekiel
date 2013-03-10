@@ -34,6 +34,8 @@ class Table extends DbObject
 
         return (k for k in @keys when k.matchesType(values))
 
+    coversSomeKey: (values) -> _.some(@keys, (k) -> k.coveredBy(values))
+
     column: (schema) -> new Column(@, schema)
 
 
