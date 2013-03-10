@@ -6,11 +6,15 @@ queryBinder = require('./query-binder')
 class TableGateway
     constructor: (@db, @schema) ->
 
+    handle: () -> @schema.many
+    toString: () -> "#{@handle()} TableGateway"
+
     findOne: () ->
         cb = _.lastIfFunction(arguments)
         keyValues = _.unwrapArgs(arguments, cb?)
+        throw new Error('You must provide key values') unless keyValues?
          
-        q = sql.from(@schema.many)
+        q = sql.from(@handle())
 
         if _.isObject(keyValues)
             q.where(keyValues)
@@ -27,11 +31,19 @@ class TableGateway
 
             q.where(keys[0].wrapValues(keyValues))
 
-        return @bindOrCall(q, 'oneRow', cb)
+        return @db.bindOrCall(q, 'oneRow', cb)
 
-    bindOrCall: (q, fn, cb) ->
-        return @db[fn](q, cb) if cb?
-        return queryBinder.bind(q, @db, fn)
+    insertOne: (values, cb = null) ->
+        throw new Error('You must provide a values object') unless values?
+
+        q = sql.insert(@handle(), values)
+        # MUST: inspect table, see if there's an identity column, act appropriately to retrieve
+        # newly inserted identity.
+        return @db.bindOrCall(q, 'noData', cb)
+         
+    count: (cb = null) ->
+        q = sql.from(@handle()).select(sql.count(1))
+        return @db.bindOrCall(q, 'scalar', cb)
 
     doError: (msg, cb) ->
         return cb(msg) if cb?

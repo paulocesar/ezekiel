@@ -5,6 +5,7 @@ dbObjects = require('../schema')
 { SqlToken } = require('../sql')
 TableGateway = require('./table-gateway')
 ActiveRecord = require('./active-record')
+queryBinder = require('./query-binder')
 
 # MUST: take schema as config object or never again. Ezekiel will take care of reading schema files
 # or loading meta data from the database.
@@ -120,6 +121,10 @@ class Database
     allRows: (query, callback) ->
         opt = { onAllRows: (rows) -> callback(null, rows) }
         @execute(query, opt, callback)
+
+    bindOrCall: (q, fn, cb) ->
+        return @[fn](q, cb) if cb?
+        return queryBinder.bind(q, @, fn)
 
     loadSchema: (schema) ->
         @schema = schema.finish()
