@@ -53,5 +53,4 @@ describe 'Database with loaded schema', () ->
                 v.should.eql(newDb[k])
 
     it 'Exposes active records via newObject()', () ->
-        # MUST: have another collection keyed off 'one' names
         assertNewObject(one) for one of schema.tablesByOne
