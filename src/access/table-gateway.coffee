@@ -36,9 +36,11 @@ class TableGateway
     insertOne: (values, cb = null) ->
         throw new Error('You must provide a values object') unless values?
 
-        q = sql.insert(@handle(), values)
         # MUST: inspect table, see if there's an identity column, act appropriately to retrieve
-        # newly inserted identity.
+        # newly inserted identity. Check if a value for a read-only column was given and treat it
+        # as error.
+
+        q = sql.insert(@handle(), values)
         return @db.bindOrCall(q, 'noData', cb)
 
     updateOne: (values) ->
@@ -61,7 +63,20 @@ class TableGateway
         # on some other fields that might be changed every once in a while. This logic lets callers
         # handle that pretty easily.
 
-        return # we don't like work
+        throw new Error("we don't like work")
+
+    deleteOne: () ->
+        cb = _.lastIfFunction(arguments)
+        keyValues = _.unwrapArgs(arguments, cb?)
+
+        throw new Error('You must provide key values for the row to be deleted') unless keyValues?
+
+        if _.isObject(keyValues)
+            covered = @schema.coversSomeKey(keyValues)
+            return @demandCoverage(keyValues, 'deleteMany', cb) unless covered
+            s = sql.delete(@handle(), keyValues)
+            return @db.bindOrCall(s, 'noData', cb)
+
          
     count: (cb = null) ->
         q = sql.from(@handle()).select(sql.count(1))
@@ -69,7 +84,7 @@ class TableGateway
 
     demandCoverage: (values, suggestion, cb) ->
         e = "Could not find a key in #{@schema} whose values are fully specified in " +
-            "#{values}. If you want to work on multiple rows, please use #{suggestion}()".
+            "#{values}. If you want to work on multiple rows, please use #{suggestion}()"
         return @bindError(e, cb)
 
     bindError: (msg, cb) ->

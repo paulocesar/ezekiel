@@ -8,7 +8,7 @@ class DbObject
         _.defaults(@, schema)
 
     toString: () ->
-        s = "#{@constructor.name}: name='#{@name}'"
+        s = "#{@constructor.name} \"#{@name}\""
         return s
 
     addEnforcingPosition: (array, newbie, position = newbie.position) ->
