@@ -7,31 +7,48 @@ class TableGateway
     constructor: (@db, @schema) ->
 
     handle: () -> @schema.many
-    toString: () -> "#{@handle()} TableGateway"
+    toString: () -> "<TableGateway to #{@handle()}>"
 
-    findOne: () ->
-        cb = _.lastIfFunction(arguments)
-        keyValues = _.unwrapArgs(arguments, cb?)
-        throw new Error('You must provide key values') unless keyValues?
-         
-        q = sql.from(@handle())
+    findOne: () -> @doOne(@_find, arguments, 'find')
+    deleteOne: () -> @doOne(@_delete, arguments, 'delete')
+
+    _find: (predicate, cb) ->
+        q = sql.from(@handle()).where(predicate)
+        return @db.bindOrCall(q, 'oneRow', cb)
+
+    _delete: (predicate, cb) ->
+        s = sql.delete(@handle(), predicate)
+        return @db.bindOrCall(s, 'noData', cb)
+
+    doOne: (fn, args, opName, queryArgument = null) ->
+        cb = _.lastIfFunction(args)
+        keyValues = _.unwrapArgs(args, cb?)
+
+        unless keyValues?
+            throw new Error('You must provide key values as arguments to #{opName}One()')
 
         if _.isObject(keyValues)
-            q.where(keyValues)
-        else
-            keys = @schema.getKeysWithShape(keyValues)
-            if keys.length == 0
-                error = "Could not find viable key in #{@schema} " +
-                    "to be compared against values #{keyValues}"
-                return @bindError(error, cb)
-            else if keys.length > 1
-                error = "More than one key in #{@schema} " +
-                    " can be compared against values #{keyValues}"
-                return @bindError(error, cb)
+            covered = @schema.coversSomeKey(keyValues)
+            if covered
+                return fn.call(@, keyValues, cb, queryArgument)
+            else
+                e = "Could not find a key in #{@schema} whose values are fully specified in " +
+                    "#{keyValues}. If you want to work on multiple rows, please use " +
+                    "#{opName}Many()"
+                return @bindError(e, cb)
 
-            q.where(keys[0].wrapValues(keyValues))
+        keys = @schema.getKeysWithShape(keyValues)
 
-        return @db.bindOrCall(q, 'oneRow', cb)
+        if keys.length == 0
+            e = "Could not find viable key in #{@schema} to be compared against " +
+                "values #{keyValues}"
+            return @bindError(e, cb)
+        else if keys.length > 1
+            e = "More than one key in #{@schema} can be compared against values #{keyValues}"
+            return @bindError(e, cb)
+
+        predicate = keys[0].wrapValues(keyValues)
+        return fn.call(@, predicate, cb, queryArgument)
 
     insertOne: (values, cb = null) ->
         throw new Error('You must provide a values object') unless values?
@@ -43,17 +60,11 @@ class TableGateway
         q = sql.insert(@handle(), values)
         return @db.bindOrCall(q, 'noData', cb)
 
-    updateOne: (values) ->
-        throw new Error('You must provide update values') unless values?
+    updateOne: (updateValues, args...) ->
         cb = _.lastIfFunction(arguments)
-        predicate = arguments[1] if (cb? && cb != arguments[1])
-
-        if predicate?
-            covered = @schema.coversSomeKey(predicate)
-            return @demandCoverage(values, 'updateMany', cb) unless covered
-
-            s = sql.update(@handle(), values, predicate)
-            return @db.bindOrCall(s, 'noData', cb)
+        cntKeyValues = if cb? then args.length - 1 else args.length
+        if (cntKeyValues > 0)
+            return @doOne(@_update, args, 'update', updateValues)
 
         # Ok, now we have work. Caller was lazy and just threw us just one object, which hopefully
         # has keys along with values being updated. If the caller provides the value for a read-only
@@ -65,27 +76,13 @@ class TableGateway
 
         throw new Error("we don't like work")
 
-    deleteOne: () ->
-        cb = _.lastIfFunction(arguments)
-        keyValues = _.unwrapArgs(arguments, cb?)
+    _update: (predicate, cb, values) ->
+        s = sql.update(@handle(), values, predicate)
+        return @db.bindOrCall(s, 'noData', cb)
 
-        throw new Error('You must provide key values for the row to be deleted') unless keyValues?
-
-        if _.isObject(keyValues)
-            covered = @schema.coversSomeKey(keyValues)
-            return @demandCoverage(keyValues, 'deleteMany', cb) unless covered
-            s = sql.delete(@handle(), keyValues)
-            return @db.bindOrCall(s, 'noData', cb)
-
-         
     count: (cb = null) ->
         q = sql.from(@handle()).select(sql.count(1))
         return @db.bindOrCall(q, 'scalar', cb)
-
-    demandCoverage: (values, suggestion, cb) ->
-        e = "Could not find a key in #{@schema} whose values are fully specified in " +
-            "#{values}. If you want to work on multiple rows, please use #{suggestion}()"
-        return @bindError(e, cb)
 
     bindError: (msg, cb) ->
         return cb(msg) if cb?
