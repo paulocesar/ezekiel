@@ -42,3 +42,9 @@ describe 'ActiveRecord', () ->
             assert = (row) -> row.firstName.should.eql('The Greatest')
             assertIdOne assert, done, (cb) -> o.update(cb)
 
+    it 'Can delete a row', (done) ->
+        o = db.newObject('fighter')
+        db.fighters.findOne 4, (err, row) ->
+            return done(err) if err
+            o.load(row)
+            assertCount cntFighters - 1, done, (cb) -> o.delete(cb)
