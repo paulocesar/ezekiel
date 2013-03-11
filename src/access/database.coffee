@@ -156,4 +156,7 @@ class Database
             arg = arguments[0]
             return o.setMany(arg) if _.isObject(arg)
 
+            gw = @getTableGateway(t.many)
+            return gw.findOne.apply(gw, arguments)
+
 module.exports = dbObjects.Database = Database

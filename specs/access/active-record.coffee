@@ -41,9 +41,14 @@ describe 'ActiveRecord', () ->
             o.should.be.an.instanceof(ActiveRecord)
             o.toString().should.include(t.one)
 
+    it 'Can be loaded from DB via db[table.one](id)', (done) ->
+        db.fighter 1, (err, row) ->
+            return done(err) if err
+            row.id.should.eql(1)
+            done()
+
     it 'Can insert a row', (done) ->
-        o = db.newObject('fighter')
-        o.setMany(testData.newFighter())
+        o = db.fighter(testData.newFighter())
         assertCount cntFighters + 1, done, (cb) -> o.insert(cb)
 
     it 'Can update a row', (done) ->
