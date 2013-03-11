@@ -1,8 +1,7 @@
 h = require('../test-helper')
 require('../live-db')
 
-TableGateway = h.requireSrc('access/table-gateway')
-
+testData = h.testData
 db = schema = tables = null
 
 before () ->
@@ -10,22 +9,18 @@ before () ->
     schema = db.schema
     tables = schema.tablesByMany
 
-fighterGateway = () -> new TableGateway(db, tables.fighters)
-assertFighterOne = (done) -> (err, row) ->
-    return done(err) if err
-    row.id.should.eql(1)
-    done()
+# SHOULD: move this into live-db.coffee, share. It's currently repeated.
+cntFighters = testData.cntFighters
+assertCount = (cntExpected, done, fn) ->
+    fn (err) ->
+        return done(err) if err
+        db.fighters.count (err, cnt) ->
+            return done(err) if err
+            cnt.should.eql(cntExpected)
+            h.cleanTestData(done)
 
 describe 'ActiveRecord', () ->
-    it 'Can be instantiated', () -> fighterGateway()
-
-    it 'Finds one row', (done) ->
-        g = fighterGateway()
-        g.findOne(1, assertFighterOne(done))
-
-    it 'Can postpone query execution', (done) ->
-        g = fighterGateway()
-        g.findOne(1).run(assertFighterOne(done))
-
-    it 'Is accessible via database property', (done) ->
-        db.fighters.findOne(1, assertFighterOne(done))
+    it 'Can insert a row', (done) ->
+        o = db.newObject('fighter')
+        o.setMany(testData.newFighter())
+        assertCount cntFighters + 1, done, (cb) -> o.insert(cb)

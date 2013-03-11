@@ -61,18 +61,24 @@ class TableGateway
         return @db.bindOrCall(q, 'noData', cb)
 
     updateOne: (updateValues, args...) ->
-        cb = _.lastIfFunction(arguments)
+        unless _.isObject(updateValues)
+            e = "The first argument to updateOne() must be an object containing the values " +
+                "to be updated in #{@schema}"
+            throw new Error(e)
+
+        cb = _.lastIfFunction(args)
         cntKeyValues = if cb? then args.length - 1 else args.length
         if (cntKeyValues > 0)
             return @doOne(@_update, args, 'update', updateValues)
 
-        # Ok, now we have work. Caller was lazy and just threw us just one object, which hopefully
-        # has keys along with values being updated. If the caller provides the value for a read-only
-        # DB key (eg, an identity column), then that key is used as the only predicate, and
-        # we try to update everything else - even a value passed in for a non-read-only unique key.
-        # This is nice because it's common to have a read-only identity PK, but a UNIQUE constraint
-        # on some other fields that might be changed every once in a while. This logic lets callers
-        # handle that pretty easily.
+        # Ok, now we have work. Caller was lazy and threw us just one object, which must
+        # has keys along with values being updated. We need to separate keys from values.
+        #
+        # If the caller provides the value for a read-only DB key (eg, an identity column), then
+        # that key is used as the only predicate, and we try to update everything else - even
+        # a value passed in for a non-read-only unique key.  This is nice because it's common to
+        # have a read-only identity PK, but a UNIQUE constraint on some other fields that might be
+        # changed every once in a while. This logic lets callers handle that pretty easily.
 
         throw new Error("we don't like work")
 

@@ -28,9 +28,6 @@ aliasedDb = () ->
     db.loadSchema(newCookedSchema())
     return db
 
-setupTestData = () ->
-
-
 schemaDb = () ->
     db = new Database( {database: 'withSchema' })
     db.Formatter = SqlFormatter

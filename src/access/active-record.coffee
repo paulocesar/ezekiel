@@ -5,44 +5,61 @@ queryBinder = require('./query-binder')
 
 states = [
     {
-        name: 'Unknown'
-        insert: (gw, cb) -> gw.insertOne(@inMemory, cb)
-        update: (gw, cb) -> gw.updateOne(@inMemory, cb)
-        upsert: (gw, cb) -> gw.upsertOne(@inMemory, cb)
-        delete: (gw, cb) -> gw.deleteOne(@inMemory, cb)
+        name: 'unknown'
+        insert: (gw, cb) -> gw.insertOne(@changed, cb)
+        update: (gw, cb) -> gw.updateOne(@changed, cb)
+        upsert: (gw, cb) -> gw.upsertOne(@changed, cb)
+        delete: (gw, cb) -> gw.deleteOne(@changed, cb)
     }
     {
-        name: 'Persisted'
-        insert: (gw, cb) -> @demandState('New')
-        update: (gw, cb) -> gw.updateOne(@inMemory, @persisted, cb)
-        upsert: (gw, cb) -> gw.updateOne(@inMemory, @persisted, cb)
-        delete: (gw, cb) -> gw.deleteOne(@persisted, cb)
+        name: 'loaded'
+        insert: (gw, cb) -> @demandState('insert', 'New')
+        update: (gw, cb) -> gw.updateOne(@changed, @loaded, cb)
+        upsert: (gw, cb) -> gw.updateOne(@changed, @loaded, cb)
+        delete: (gw, cb) -> gw.deleteOne(@loaded, cb)
     }
     {
-        name: 'New'
-        insert: (gw, cb) -> gw.insertOne(@inMemory, cb)
-        update: (gw, cb) -> @demandState('not New')
-        upsert: (gw, cb) -> gw.insertOne(@inMemory, cb)
-        delete: (gw, cb) -> @demandState('not New')
+        name: 'new'
+        insert: (gw, cb) -> gw.insertOne(@changed, cb)
+        update: (gw, cb) -> @demandState('update', 'not new')
+        upsert: (gw, cb) -> gw.insertOne(@changed, cb)
+        delete: (gw, cb) -> @demandState('delete', 'not new')
     }
     {
-        name: 'Deleted'
-        insert: (gw, cb) -> @demandState('not deleted')
-        update: (gw, cb) -> @demandState('not deleted')
-        upsert: (gw, cb) -> @demandState('not deleted')
-        delete: (gw, cb) -> @demandState('not deleted')
+        name: 'deleted'
+        insert: (gw, cb) -> @demandState('insert', 'not deleted')
+        update: (gw, cb) -> @demandState('update', 'not deleted')
+        upsert: (gw, cb) -> @demandState('upsert', 'not deleted')
+        delete: (gw, cb) -> @demandState('delete', 'not deleted')
     }
 ]
 
 class ActiveRecordState
-    constructor: (@old = {}, @inMemory = {}, @state = 0) ->
+    constructor: (@loaded = {}, @changed = {}, @n = 0) ->
+    name: () -> states[@n].name
+    toString: () -> "<ActiveRecordState: #{@name()}>"
 
-    loadOldData: (o) ->
-        @old = o
-        @state = 1 unless @state = 3
+    insert: (gw, cb) -> states[@n].insert.call(@, gw, cb)
+    update: (gw, cb) -> states[@n].update.call(@, gw, cb)
+    delete: (gw, cb) -> states[@n].delete.call(@, gw, cb)
+    upsert: (gw, cb) -> states[@n].upsert.call(@, gw, cb)
 
-    loadNewData: (o) ->
-        @new = o
+    get: (key) -> @changed[key] ? @loaded[key]
+
+    set: (key, value) ->
+      if @loaded[key] == value
+        delete @changed[key]
+        return
+
+      @changed[key] = value
+
+    demandState: (op, s) ->
+      e = "Cannot do operation #{op} in state #{@name()}. State must be #{s}"
+      throw new Error(e)
+
+    load: (o) ->
+        @loaded = o
+        @n = 1 unless @n = 3
 
 class ActiveRecord
     constructor: (@gw, @schema, @_s = null) ->
@@ -60,32 +77,25 @@ class ActiveRecord
             set: (v) -> @set(key, v)
         })
 
-    get: (property) -> @_s.inMemory[property] ? @_s.persisted[property]
-    set: (property, v) -> @_s.inMemory[property] = v
+    get: (property) -> @_s.get(property)
+
+    set: (property, v) ->
+      @_s.set(property, v)
+      return @
+
+    setMany: (o) ->
+      @set(k, v) for k, v of o
+      return @
 
     attach: (gw, s) ->
         @gw = gw
         @_s = s ? new ActiveRecordState()
 
-    @demandState: (s) -> throw new Error("needs state #{s}")
+    load: (o) -> @_s.load(o)
 
-    loadOldData: (o) -> @_s.loadOldData(o)
-    loadNewData: (o) -> @_s.loadNewData(o)
-
-    insert: (cb) ->
-        s = @_s
-        states[s.state].insert.call(s, @gw, cb)
-
-    update: (cb) ->
-        s = @_s
-        states[s.state].update.call(s, @gw, cb)
-
-    upsert: (cb) ->
-        s = @_s
-        states[s.state].upsert.call(s, @gw, cb)
-
-    delete: (cb) ->
-        s = @_s
-        states[s.state].delete.call(s, @gw, cb)
+    insert: (cb) -> @_s.insert(@gw, cb)
+    update: (cb) -> @_s.update(@gw, cb)
+    upsert: (cb) -> @_s.upsert(@gw, cb)
+    delete: (cb) -> @_s.delete(@gw, cb)
 
 module.exports = ActiveRecord
