@@ -86,6 +86,10 @@ class TableGateway
         s = sql.update(@handle(), values, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
+    selectMany: (predicate, cb) ->
+        q = sql.from(@handle()).where(predicate)
+        return @db.bindOrCall(q, 'allObjects', cb)
+
     count: (cb = null) ->
         q = sql.from(@handle()).select(sql.count(1))
         return @db.bindOrCall(q, 'scalar', cb)

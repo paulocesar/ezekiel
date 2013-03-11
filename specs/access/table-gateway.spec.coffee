@@ -3,6 +3,7 @@ _ = require('underscore')
 require('../live-db')
 
 TableGateway = h.requireSrc('access/table-gateway')
+ActiveRecord = h.requireSrc('access/active-record')
 
 testData = h.testData
 cntFighters = h.testData.cntFighters
@@ -65,7 +66,7 @@ describe 'TableGateway', () ->
             done()
 
 
-    it 'Finds one row', (done) ->
+    it 'Selects one row', (done) ->
         g = fighterGateway()
         g.findOne(1, assertFighterOne(done))
 
@@ -99,3 +100,12 @@ describe 'TableGateway', () ->
 
     it 'Deletes one row by direct key value', (done) ->
         assertCount cntFighters - 1, done, (cb) -> db.fighters.deleteOne(3, cb)
+
+
+    it 'Selects many objects', (done) ->
+        db.fighters.selectMany { lastName: 'Silva' }, (err, objects) ->
+            return done(err) if err
+            for o in objects
+                o.should.be.instanceof(ActiveRecord)
+                o.lastName.should.eql('Silva')
+            done()
