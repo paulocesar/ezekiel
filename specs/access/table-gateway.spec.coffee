@@ -53,9 +53,9 @@ describe 'TableGateway', () ->
         g.findOne(1).run(assertFighterOne(done))
 
     it 'Allows query manipulation', (done) ->
+        expected = _.filter(testData.fighters, (f) -> f.lastName == 'Silva').length
         db.fighters.count().where( { lastName: 'Silva' }).run (err, cnt) ->
             return done(err) if err
-            expected = _.filter(testData.fighters, (f) -> f.lastName == 'Silva').length
             cnt.should.eql(expected)
             done()
 
