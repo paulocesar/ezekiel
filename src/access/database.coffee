@@ -132,17 +132,28 @@ class Database
         for t in @schema.tables
             @tableGatewayPrototypes[t.many] = new TableGateway(null, t)
             @activeRecordPrototypes[t.one] = new ActiveRecord(null, t)
-
-            @makeGatewayAccessor(t.many, @getTableGateway)
+            @makeAccessors(t)
 
         return @schema
 
-    makeGatewayAccessor: (key) ->
-        return if key of @
+    makeAccessors: (t) ->
+        unless t.many of @
+            Object.defineProperty(@, t.many, {
+                configurable: false, get: () -> @getTableGateway(t.many)
+            })
 
-        Object.defineProperty(@, key, {
-            get: () -> @getTableGateway(key)
-            configurable: false
-        })
+        unless t.one of @
+            getter = @makeObjectGetter(t)
+            Object.defineProperty(@, t.one, {
+                configurable: false, get: () -> getter
+            })
+
+    makeObjectGetter: (t) ->
+        () ->
+            o = @newObject(t.one)
+            return o if arguments.length == 0
+
+            arg = arguments[0]
+            return o.setMany(arg) if _.isObject(arg)
 
 module.exports = dbObjects.Database = Database

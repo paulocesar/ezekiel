@@ -68,6 +68,8 @@ class ActiveRecord
         for c in @schema.columns
             @addColumnAccessor(c)
 
+    toString: () -> "<ActiveRecord for #{@schema.one}>"
+
     addColumnAccessor: (c) ->
         key = c.property
         return if key of @
@@ -91,7 +93,9 @@ class ActiveRecord
         @gw = gw
         @_s = s ? new ActiveRecordState()
 
-    load: (o) -> @_s.load(o)
+    load: (o) ->
+      @_s.load(o)
+      return @
 
     insert: (cb) -> @_s.insert(@gw, cb)
     update: (cb) -> @_s.update(@gw, cb)

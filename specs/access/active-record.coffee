@@ -1,13 +1,14 @@
 h = require('../test-helper')
 require('../live-db')
 
+ActiveRecord = h.requireSrc('access/active-record')
+
 testData = h.testData
-db = schema = tables = null
+db = schema = null
 
 before () ->
     db = h.liveDb
     schema = db.schema
-    tables = schema.tablesByMany
 
 # SHOULD: move this into live-db.coffee, share. It's currently repeated.
 cntFighters = testData.cntFighters
@@ -28,6 +29,18 @@ assertIdOne = (rowAssert, done, fn) ->
             h.cleanTestData(done)
 
 describe 'ActiveRecord', () ->
+    it 'Can be instantiated via db.newObject()', ->
+        for t in schema.tables
+            o = db.newObject(t.one)
+            o.should.be.an.instanceof(ActiveRecord)
+            o.toString().should.include(t.one)
+
+    it 'Can be instantiated via db[table.one]()', ->
+        for t in schema.tables
+            o = db[t.one]()
+            o.should.be.an.instanceof(ActiveRecord)
+            o.toString().should.include(t.one)
+
     it 'Can insert a row', (done) ->
         o = db.newObject('fighter')
         o.setMany(testData.newFighter())
