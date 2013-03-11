@@ -59,7 +59,7 @@ class ActiveRecordState
 
     load: (o) ->
         @loaded = o
-        @n = 1 unless @n = 3
+        @n = 1 unless @n == 3
 
 class ActiveRecord
     constructor: (@gw, @schema, @_s = null) ->
