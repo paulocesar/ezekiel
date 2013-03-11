@@ -52,13 +52,13 @@ describe 'ActiveRecord', () ->
         assertCount cntFighters + 1, done, (cb) -> o.insert(cb)
 
     it 'Can update a row', (done) ->
-        db.fighters.findOne 1, (err, o) ->
+        db.fighter 1, (err, o) ->
             return done(err) if err
             o.firstName = 'The Greatest' # No wind or waterfall could stall me
             assert = (o) -> o.firstName.should.eql('The Greatest')
             assertIdOne assert, done, (cb) -> o.update(cb)
 
     it 'Can delete a row', (done) ->
-        db.fighters.findOne 4, (err, o) ->
+        db.fighter 4, (err, o) ->
             return done(err) if err
             assertCount cntFighters - 1, done, (cb) -> o.delete(cb)
