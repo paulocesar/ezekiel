@@ -66,7 +66,7 @@ describe('Database', () ->
     it('should raise an error when tryScalar finds more than 1 row', (done) ->
         query = "#{tmpTable} SELECT FirstName FROM @names WHERE LastName = 'Wallace'"
         database.tryScalar(query, (err, r) ->
-            err.should.match(/^Too many rows returned/)
+            err.should.match(/Too many rows returned/)
             done()
         )
     )
@@ -100,7 +100,7 @@ describe('Database', () ->
     it('should raise an error when tryOneRow finds more than 1 row', (done) ->
         query = "#{tmpTable} SELECT FirstName, LastName FROM @names WHERE LastName = 'Wallace'"
         database.tryOneRow(query, (err, r) ->
-            err.should.match(/^Too many rows returned/)
+            err.should.match(/Too many rows returned/)
             done()
         )
     )

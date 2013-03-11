@@ -5,6 +5,10 @@ boundFunctions = {
     tryScalar: (cb) -> @db.tryScalar(@, cb)
     oneRow: (cb) -> @db.oneRow(@, cb)
     tryOneRow: (cb) -> @db.tryOneRow(@, cb)
+    allRows: (cb) -> @db.allRows(@, cb)
+
+    oneObject: (typeOrCb, cbOrNull) -> @db.oneObject(@, typeOrCb, cbOrNull)
+    allObjects: (typeOrCb, cbOrNull) -> @db.allObjects(@, typeOrCb, cbOrNull)
     array: (cb) -> @db.array(@, cb)
 }
 

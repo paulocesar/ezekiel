@@ -52,17 +52,13 @@ describe 'ActiveRecord', () ->
         assertCount cntFighters + 1, done, (cb) -> o.insert(cb)
 
     it 'Can update a row', (done) ->
-        o = db.newObject('fighter')
-        db.fighters.findOne 1, (err, row) ->
+        db.fighters.findOne 1, (err, o) ->
             return done(err) if err
-            o.load(row)
             o.firstName = 'The Greatest' # No wind or waterfall could stall me
-            assert = (row) -> row.firstName.should.eql('The Greatest')
+            assert = (o) -> o.firstName.should.eql('The Greatest')
             assertIdOne assert, done, (cb) -> o.update(cb)
 
     it 'Can delete a row', (done) ->
-        o = db.newObject('fighter')
-        db.fighters.findOne 4, (err, row) ->
+        db.fighters.findOne 4, (err, o) ->
             return done(err) if err
-            o.load(row)
             assertCount cntFighters - 1, done, (cb) -> o.delete(cb)

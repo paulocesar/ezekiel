@@ -14,7 +14,7 @@ class TableGateway
 
     _find: (predicate, cb) ->
         q = sql.from(@handle()).where(predicate)
-        return @db.bindOrCall(q, 'oneRow', cb)
+        return @db.bindOrCall(q, 'oneObject', cb)
 
     _delete: (predicate, cb) ->
         s = sql.delete(@handle(), predicate)
@@ -25,33 +25,33 @@ class TableGateway
         keyValues = _.unwrapArgs(args, cb?)
 
         unless keyValues?
-            throw new Error('You must provide key values as arguments to #{opName}One()')
+            throw new Error('doOne: You must provide key values as arguments to #{opName}One()')
 
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered
                 return fn.call(@, keyValues, cb, queryArgument)
             else
-                e = "Could not find a key in #{@schema} whose values are fully specified in " +
-                    "#{keyValues}. If you want to work on multiple rows, please use " +
+                e = "doOne: Could not find a key in #{@schema} whose values are fully specified " +
+                    "in #{keyValues}. If you want to work on multiple rows, please use " +
                     "#{opName}Many()"
                 return @bindError(e, cb)
 
         keys = @schema.getKeysWithShape(keyValues)
 
         if keys.length == 0
-            e = "Could not find viable key in #{@schema} to be compared against " +
+            e = "doOne: Could not find viable key in #{@schema} to be compared against " +
                 "values #{keyValues}"
             return @bindError(e, cb)
         else if keys.length > 1
-            e = "More than one key in #{@schema} can be compared against values #{keyValues}"
+            e = "doOne: Multiple keys in #{@schema} can be compared against values #{keyValues}"
             return @bindError(e, cb)
 
         predicate = keys[0].wrapValues(keyValues)
         return fn.call(@, predicate, cb, queryArgument)
 
     insertOne: (values, cb = null) ->
-        throw new Error('You must provide a values object') unless values?
+        throw new Error('insertOne: You must provide a values object') unless values?
 
         # MUST: inspect table, see if there's an identity column, act appropriately to retrieve
         # newly inserted identity. Check if a value for a read-only column was given and treat it
@@ -62,8 +62,8 @@ class TableGateway
 
     updateOne: (updateValues, args...) ->
         unless _.isObject(updateValues)
-            e = "The first argument to updateOne() must be an object containing the values " +
-                "to be updated in #{@schema}"
+            e = "updateOne: The first argument to updateOne() must be an object containing the " +
+                "values to be updated in #{@schema}"
             throw new Error(e)
 
         cb = _.lastIfFunction(args)

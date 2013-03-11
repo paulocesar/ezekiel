@@ -2,11 +2,22 @@ _ = require('more-underscore/src')
 
 dbObjects = require('../schema')
 { DbSchema } = dbObjects
-{ SqlToken } = require('../sql')
+{ SqlToken, SqlSelect } = require('../sql')
 TableGateway = require('./table-gateway')
 ActiveRecord = require('./active-record')
 queryBinder = require('./query-binder')
 
+
+msgPassActiveRecordType =
+    "If you want objects from a query that lacks source table information, like a raw string " +
+    "or SqlSelect without tables, you must provide the desired object type as  a parameter." +
+    "For example: db.oneObject('SELECT * FROM customers WHERE Id = 1', 'customer', cb)"
+
+newActiveRecord = (proto, tableGateway) ->
+    ar = Object.create(proto)
+    ar.attach(tableGateway)
+    return ar
+    
 # MUST: take schema as config object or never again. Ezekiel will take care of reading schema files
 # or loading meta data from the database.
 #
@@ -33,17 +44,14 @@ class Database
     newObject: (one) ->
         proto = @getProtoOrThrow('activeRecordPrototypes', one)
         gw = @getTableGateway(proto.schema.many)
-
-        ar = Object.create(proto)
-        ar.attach(gw)
-        return ar
+        return newActiveRecord(proto, gw)
 
     getProtoOrThrow: (propertyName, key) ->
         proto = @[propertyName][key]
         return proto if proto?
 
-        e = "Could not find an entry in #{propertyName} for #{key}. Make sure you " +
-            "have loaded a schema into this database instance and check spelling and " +
+        e = "getProtoOrThrow: Could not find an entry in #{propertyName} for #{key}. Make sure " +
+            "you have loaded a schema into this database instance and check spelling and " +
             "capitalization. You can inspect the #{propertyName} property to see the available " +
             "prototypes. Good luck."
 
@@ -69,20 +77,67 @@ class Database
     oneRow: (query, cb) -> @_selectOneRow(query, 'object', false, cb)
     tryOneRow: (query, cb) -> @_selectOneRow(query, 'object', true, cb)
 
+    oneObject: (query, typeOrCb, cbOrNull) ->
+        wrapper = @_buildRowWrapper(query, typeOrCb, cbOrNull)
+        return @oneRow(query, wrapper)
+
+    _buildRowWrapper: (query, typeOrCb, cbOrNull) ->
+        cb = cbOrNull ? typeOrCb
+        if cbOrNull?
+            one = typeOrCb
+            proto = @getProtoOrThrow('activeRecordPrototypes', one)
+            gw = @getTableGateway(proto.schema.many)
+        else
+            gw = @_tableGwFromQuery(query)
+            proto = @getProtoOrThrow('activeRecordPrototypes', gw.schema.one)
+
+        return (err, data) ->
+            return cb(err) if err
+
+            if _.isArray(data)
+                for row, i in data
+                    data[i] = newActiveRecord(proto, gw).load(row)
+                result = data
+            else
+                result = newActiveRecord(proto, gw).load(data)
+
+            cb(null, result)
+
+    _tableGwFromQuery: (query) ->
+        unless query instanceof SqlSelect
+            e = "_tableGwFromQuery: Cannot find source table for query '#{query}' " +
+                "because it is not an instance of SqlSelect. " + msgPassActiveRecordType
+                
+            throw new Error(e)
+
+        many = query.tables[0]
+        unless many?
+            e = "_tableGwFromQuery: #{query} does not have any source tables. " +
+                msgPassActiveRecordType
+            throw new Error(e)
+
+        many = _.firstOrSelf(many)
+        unless _.isString(many)
+            e = "_tableGwFromQuery: #{query} has #{many} as its first table, which is not a " +
+                "string, so I don't know which table it is. " + msgPassActiveRecordType
+
+        gw = @getTableGateway(many)
+        return gw
+
     _selectOneRow: (query, rowShape, allowEmpty, cb) ->
         opt = {
             rowShape: rowShape
             onAllRows: (rows) ->
                 if rows.length == 0
                     if !allowEmpty
-                        e  = "No data returned for query #{query}. Expected 1 row."
+                        e  = "_selectOneRow: No data returned for query #{query}. Expected 1 row."
                         return cb(e)
                     else
                         return cb(null, null)
 
                 if (rows.length != 1)
-                    e = "Too many rows returned for query #{query}. Expected 1 row " +
-                        "but got #{rows.length}"
+                    e = "_selectOneRow: Too many rows returned for query #{query}. " +
+                        "Expected 1 row but got #{rows.length}"
                     return cb(e)
 
                 v = (if rowShape == 'array' then rows[0][0] else rows[0])
@@ -122,6 +177,10 @@ class Database
         opt = { onAllRows: (rows) -> callback(null, rows) }
         @execute(query, opt, callback)
 
+    allObjects: (query, typeOrCb, cbOrNull) ->
+        wrapper = @_buildRowWrapper(query, typeOrCb, cbOrNull)
+        @allRows(query, wrapper)
+
     bindOrCall: (q, fn, cb) ->
         return @[fn](q, cb) if cb?
         return queryBinder.bind(q, @, fn)
@@ -155,6 +214,8 @@ class Database
 
             arg = arguments[0]
             return o.setMany(arg) if _.isObject(arg)
+
+            keyValues = _.unwrapArgs
 
             gw = @getTableGateway(t.many)
             return gw.findOne.apply(gw, arguments)
