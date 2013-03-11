@@ -215,8 +215,6 @@ class Database
             arg = arguments[0]
             return o.setMany(arg) if _.isObject(arg)
 
-            keyValues = _.unwrapArgs
-
             gw = @getTableGateway(t.many)
             return gw.findOne.apply(gw, arguments)
 
