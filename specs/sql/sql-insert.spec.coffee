@@ -24,3 +24,11 @@ describe 'SqlInsert', () ->
             "COALESCE([lastName], [firstName]) VALUES ('Liddell')"
 
         h.assertSql(q, e)
+
+    it 'Understands inserted.* in OUTPUT', ->
+        q = sql.insert('fighters', { lastName: 'Liddell' })
+            .output("inserted.id")
+
+        e = "INSERT [fighters] ([lastName]) OUTPUT [inserted].[id] VALUES ('Liddell')"
+
+        h.assertSql(q, e)

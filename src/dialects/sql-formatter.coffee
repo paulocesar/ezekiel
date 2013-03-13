@@ -281,7 +281,7 @@ class SqlFormatter
         return token
 
     tokenizeColumn: (atom, fnFindSchema = @findColumnSchema) ->
-        @tokenizeAtom(atom, @findColumnSchema, @parseNameOrExpression)
+        @tokenizeAtom(atom, fnFindSchema, @parseNameOrExpression)
 
     tokenizeRhs: (atom) -> @tokenizeAtom(atom, @findColumnSchema)
 
@@ -323,7 +323,7 @@ class SqlFormatter
             return
 
         if token.prefix() in ['inserted', 'deleted', null]
-            t._schema = @targetSchema.columnsByProperty[token.tip()]
+            token._schema = @targetSchema.columnsByProperty[token.tip()]
 
     _addSources: (a, type) ->
         for o in a
@@ -440,7 +440,6 @@ class SqlFormatter
 
         ret += " (#{names.join(', ')}) "
         if stmt.outputColumns?
-            console.log(stmt.outputColumns)
             outputs = (@doOutputColumn(o) for o in [].concat(stmt.outputColumns))
             ret += "OUTPUT #{outputs.join(', ')} "
 
