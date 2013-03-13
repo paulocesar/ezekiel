@@ -92,13 +92,21 @@ class SqlFormatter
         else
             return @f(tableToken) + '.*'
 
-    doAliasedColumn: (c, fn) ->
+    doAliasedColumn: (c) ->
         atom = _.firstOrSelf(c)
         alias = _.secondOrNull(c)
-        t = @tokenizeColumn(atom, fn)
+        t = @tokenizeColumn(atom)
         return @doAliasedToken(t, alias)
 
-    doOutputColumn: (output) -> @doAliasedColumn(output, @findOutputColumnSchema)
+    doOutputColumn: (output, defaultPrefix) ->
+        atom = _.firstOrSelf(output)
+        t = @tokenizeColumn(atom, @findOutputColumnSchema)
+
+        if atom != t && t instanceof SqlFullName
+            t.setDefaultPrefix(defaultPrefix)
+
+        alias = _.secondOrNull(output)
+        return @doAliasedToken(t, alias)
 
     # A column might be an actual table column, but it could also be an expression,
     # SQL literal, subquery, etc.
@@ -440,7 +448,7 @@ class SqlFormatter
 
         ret += " (#{names.join(', ')}) "
         if stmt.outputColumns?
-            outputs = (@doOutputColumn(o) for o in [].concat(stmt.outputColumns))
+            outputs = (@doOutputColumn(o, 'inserted') for o in [].concat(stmt.outputColumns))
             ret += "OUTPUT #{outputs.join(', ')} "
 
         ret += "VALUES (#{values.join(', ')})"

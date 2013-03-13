@@ -62,6 +62,9 @@ class SqlFullName extends SqlToken
     toSql: (f) -> f.fullName(@)
     tip: () -> _.last(@parts)
     prefix: () -> @parts[@parts.length - 2] ? null
+    setDefaultPrefix: (prefix) ->
+        @parts.unshift(prefix) unless @prefix()?
+        return @
 
 class SqlParens extends SqlToken
     constructor: (@contents) ->

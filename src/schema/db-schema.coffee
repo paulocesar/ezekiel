@@ -41,7 +41,7 @@ class DbSchema extends DbObject
     addSchemaItems: (constructor, list, parent) ->
         for i in list
             p = parent ? @tablesByName[i.tableName]
-            # If parent is a view, then we don't have it it, so bail out. MUST: handle views
+            # If parent is a view, then we don't have it, so bail out. MUST: handle views
             # in the future
             return unless p?
             new constructor(p, i)
@@ -49,8 +49,6 @@ class DbSchema extends DbObject
     addKeyColumns: (list) ->
         for i in list
             c = @constraintsByName[i.constraintName]
-            unless c?
-                console.log(@constraintsByName, i)
             c.addColumn(i)
 
     table: (schema) -> new Table(@, schema)

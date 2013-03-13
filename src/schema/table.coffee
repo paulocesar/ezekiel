@@ -36,10 +36,27 @@ class Table extends DbObject
 
         return (k for k in @keys when k.matchesType(values))
 
-    coversSomeKey: (values) ->
-        _.some(@keys, (k) -> k.coveredBy(values))
+    isInsertable: (values) ->
+        for k, v of values
+            return false unless @columnsByProperty[k]?.isInsertable(v)
+        return true
 
+    getInsertErrors: (values) ->
+        for k, v of values
+            if @hasProperty(k) then property(k).getInsertError(v) else "Unknown property #{k}."
+
+    demandInsertable: (values) ->
+        return if @isInsertable(values)
+        errors = @getInsertErrors(values).join(' ')
+        throw new Error(errors)
+
+    coversSomeKey: (values) -> _.some(@keys, (k) -> k.coveredBy(values))
+    hasIdentity: () -> @some('isIdentity')
+    hasReadOnly: () -> @some('isReadOnly')
+    hasProperty: (p) -> p of @columnsByProperty
+
+    some: (p) -> _.some(@columns, (c) -> c[p])
     column: (schema) -> new Column(@, schema)
-
+    readOnlyProperties: () -> (c.property for c in @columns when c.isReadOnly)
 
 module.exports = dbObjects.Table = Table

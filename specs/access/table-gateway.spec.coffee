@@ -73,7 +73,11 @@ describe 'TableGateway', () ->
 
     it 'Inserts one row', (done) ->
         f = testData.newFighter()
-        assertCount cntFighters + 1, done, (cb) ->  db.fighters.insertOne(f, cb)
+        cntExpected = cntFighters + 1
+        db.fighters.insertOne f, (err, inserted) ->
+            return done(err) if err
+            inserted.id.should.eql(cntExpected)
+            assertCount cntFighters + 1, done, (cb) ->  cb()
 
 
     it 'Updates one row by object predicate', (done) ->

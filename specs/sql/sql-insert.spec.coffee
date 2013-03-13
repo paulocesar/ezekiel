@@ -12,15 +12,15 @@ describe 'SqlInsert', () ->
         q = sql.insert('table', { id: 10, name: null })
         h.assertSql(q, 'INSERT [table] ([id], [name]) VALUES (10, NULL)', false)
 
-    it 'Accepts an output column for id retrieval', ->
+    it 'accepts an OUTPUT column for id retrieval', ->
         q = sql.insert('fighters', { lastName: 'Liddell' }).output("id")
-        h.assertSql(q, "INSERT [fighters] ([lastName]) OUTPUT [id] VALUES ('Liddell')")
+        h.assertSql(q, "INSERT [fighters] ([lastName]) OUTPUT [inserted].[id] VALUES ('Liddell')")
 
-    it 'Accepts aliases and expressions in output', ->
+    it 'accepts aliases and expressions in OUTPUT', ->
         q = sql.insert('fighters', { lastName: 'Liddell' })
             .output("id", [42, 'bomba'], "LEN(lastName)", [sql.coalesce('lastName', 'firstName')])
 
-        e = "INSERT [fighters] ([lastName]) OUTPUT [id], 42 as [bomba], LEN(lastName), " +
+        e = "INSERT [fighters] ([lastName]) OUTPUT [inserted].[id], 42 as [bomba], LEN(lastName), " +
             "COALESCE([lastName], [firstName]) VALUES ('Liddell')"
 
         h.assertSql(q, e)

@@ -90,11 +90,20 @@ class Column extends DbObject
         @property = @name
         @table.columnsByName[@name] = @
 
-    sqlAlias: () -> @property
+    isInsertable: (v) -> @getInsertError(v) == ''
+
+    getInsertError: (v) ->
+        if @isIdentity
+            return "#{@} is an identity column and cannot be inserted into."
+        if @isReadOnly
+            return "#{@} is a read-only column and cannot be inserted into."
+
+        # MUST: deal with data types
+        return ''
 
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
-
     matchesType: (v) -> @jsType.matchesType(v)
+    sqlAlias: () -> @property
 
 class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']

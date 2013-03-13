@@ -16,9 +16,11 @@ describe 'SqlInsert with aliased schema', () ->
 
     it 'does proper aliases in OUTPUT clause', ->
         q = sql.insert('fighters', { lastName: 'Liddell' })
-            .output("inserted.id", "inserted.lastName", "WeirdColumn")
+            .output("inserted.id", "inserted.lastName", "WeirdColumn",
+                sql.name(['FullSqlName']))
 
         e = "INSERT [Fighters] ([LastName]) OUTPUT [inserted].[Id] as [id], " +
-            "[inserted].[LastName] as [lastName], [WeirdColumn] VALUES ('Liddell')"
+            "[inserted].[LastName] as [lastName], [inserted].[WeirdColumn], " +
+            "[FullSqlName] VALUES ('Liddell')"
 
         h.assertAlias(q, e)

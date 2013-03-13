@@ -14,7 +14,7 @@ assertUniq = (uq, a) ->
     a.should.eql([uq])
 
 describe 'Table', () ->
-    it 'Finds single keys by their shape', () ->
+    it 'finds single keys by their shape', () ->
         promotions = tables.promotions
 
         uq = schema.constraintsByName.UQ_Promotions_Name
@@ -28,7 +28,7 @@ describe 'Table', () ->
         fights.getKeysWithShape(1).should.eql([fights.pk])
 
 
-    it 'Finds composite keys by the types of its values', () ->
+    it 'finds composite keys by the types of its values', () ->
         rounds = tables.rounds
 
         pk = tables.rounds.pk
@@ -36,7 +36,7 @@ describe 'Table', () ->
         assertUniq(pk, rounds.getKeysWithShape([10, 10]))
 
 
-    it 'Knows whether an object covers one of its keys', () ->
+    it 'knows whether an object covers one of its keys', () ->
         tables.fighters.coversSomeKey({ id: 1 }).should.be.true
         tables.fighters.coversSomeKey({ lastName: 'Silva' }).should.be.false
         tables.fighters.coversSomeKey({ gw: {}, _s: {} }).should.be.false
@@ -45,3 +45,8 @@ describe 'Table', () ->
 
         tables.rounds.coversSomeKey({ fightId: 1 }).should.be.false
         tables.rounds.coversSomeKey({ fightId: 1, number: 1 }).should.be.true
+
+    it 'knows whether it has an identity column', () ->
+        tables.fighters.hasIdentity().should.be.true
+
+

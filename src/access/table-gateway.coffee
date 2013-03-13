@@ -53,12 +53,16 @@ class TableGateway
     insertOne: (values, cb = null) ->
         throw new Error('insertOne: You must provide a values object') unless values?
 
-        # MUST: inspect table, see if there's an identity column, act appropriately to retrieve
-        # newly inserted identity. Check if a value for a read-only column was given and treat it
-        # as error.
+        @schema.demandInsertable(values)
 
         q = sql.insert(@handle(), values)
-        return @db.bindOrCall(q, 'noData', cb)
+        if @schema.hasReadOnly()
+            q.output(@schema.readOnlyProperties())
+            fn = 'oneRow'
+        else
+            fn = 'noData'
+
+        return @db.bindOrCall(q, fn, cb)
 
     updateOne: (updateValues, args...) ->
         unless _.isObject(updateValues)
