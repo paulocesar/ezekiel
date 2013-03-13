@@ -12,6 +12,14 @@ describe 'SqlSelect with aliased schema', () ->
 
         assert(s, expected)
 
+    it 'always treats a raw string as name', ->
+        s = sql.select('id', 'firstName', 'random').from('fighters')
+
+        expected = "SELECT [Id] as [id], [FirstName] as [firstName], [random] FROM " +
+            "[Fighters] as [fighters]"
+
+        assert(s, expected)
+
 
     it 'does SQL prefixes', ->
         s = sql.select('fighters.id', 'firstName').from('fighters')
