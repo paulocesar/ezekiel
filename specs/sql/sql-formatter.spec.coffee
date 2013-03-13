@@ -25,7 +25,7 @@ describe('SqlFormatter', () ->
     )
 
     it('Can tell expressions from names', ->
-        f._parseNameOrExpression("Qty * Price").should.be.an.instanceOf(SqlExpression)
-        f._parseNameOrExpression("Foobar").should.be.an.instanceOf(SqlFullName)
+        f.parseNameOrExpression("Qty * Price").should.be.an.instanceOf(SqlExpression)
+        f.parseNameOrExpression("Foobar").should.be.an.instanceOf(SqlFullName)
     )
 )

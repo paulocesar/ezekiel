@@ -90,6 +90,8 @@ class Column extends DbObject
         @property = @name
         @table.columnsByName[@name] = @
 
+    sqlAlias: () -> @property
+
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
 
     matchesType: (v) -> @jsType.matchesType(v)

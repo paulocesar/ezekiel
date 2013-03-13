@@ -92,11 +92,13 @@ class SqlFormatter
         else
             return @f(tableToken) + '.*'
 
-    column: (c) ->
+    doAliasedColumn: (c, fn) ->
         atom = _.firstOrSelf(c)
         alias = _.secondOrNull(c)
-        t = @tokenizeColumn(atom)
-        return @_doAliasedToken(t, alias)
+        t = @tokenizeColumn(atom, fn)
+        return @doAliasedToken(t, alias)
+
+    doOutputColumn: (output) -> @doAliasedColumn(output, @findOutputColumnSchema)
 
     # A column might be an actual table column, but it could also be an expression,
     # SQL literal, subquery, etc.
@@ -116,7 +118,7 @@ class SqlFormatter
         else
             return @f(token)
 
-    _doAliasedToken: (token, alias) ->
+    doAliasedToken: (token, alias) ->
         t = @_doToken(token)
         schema = token._schema
         alias ?= schema?.sqlAlias()
@@ -206,7 +208,7 @@ class SqlFormatter
     from: (f) ->
         token = f._token
         schema = f._schema
-        return @_doAliasedToken(f._token, f.alias)
+        return @doAliasedToken(f._token, f.alias)
 
     join: (j) ->
         str = " #{j.type} JOIN #{@from(j)} ON #{@f(j.predicate)}"
@@ -226,7 +228,7 @@ class SqlFormatter
     # But when they give us a string, we have two choices:
     #
     # 1) Assume it must be a SQL name or expression.  This is how we treat columns and the property
-    # name (the left-hand side, LHS) in a where predicate object (like country and firstName above).
+    # name in a where predicate object (the left-hand side, LHS, like country and firstName above).
     # In this case, we try a little parsing to decide what the string is.
     #
     # 2) Assume it must be a string literal, which happens for 'USA' and 'Jon' above (the right-hand
@@ -240,7 +242,7 @@ class SqlFormatter
     # 
     # Here LEN(LastName) is in case 1) above and gets parsed correctly as an expression.
     # However, LEN(FirstName) is in case 2) and gets treated as a string literal.  It might seem
-    # like a good idea to get fancy and try parsing the value of a where predicate, but that way
+    # like a good idea to get fancy and try parsing the RHS of a where predicate, but that way
     # madness lies. A simple query like:
     #
     # sql.from('fighters').where(lastName: queryString)
@@ -261,9 +263,9 @@ class SqlFormatter
     # it's better to blow up, since returning the literal will confuse the hell out of them.  10% of
     # the time the user wants a string literal in the result set, in which case they must do
     # sql.literal(s) to get it, which is easy enough. But then there's the real killer: if users
-    # starting giving us all sorts of crazy strings without sql.literal(), sometimes these strings
-    # WILL match up with column names, in unintended ways, again opening a wide door to calamity.
-    # Imagine the fun exploits as people submit "user.password" on websites as search strings ;)
+    # give us all sorts of crazy strings without sql.literal(), sometimes these strings WILL match
+    # up with column names, in unintended ways, again opening a wide door to calamity.  Imagine the
+    # fun exploits as people submit "user.password" into various web inputs trying to strike gold ;)
     #
     # So, there. Simple and explicit take the cake.
     tokenizeAtom: (atom, fnFindSchema, fnParseString) ->
@@ -278,15 +280,17 @@ class SqlFormatter
 
         return token
 
-    tokenizeColumn: (atom) -> @tokenizeAtom(atom, @_findColumnSchema, @_parseNameOrExpression)
-    tokenizeRhs: (atom) -> @tokenizeAtom(atom, @_findColumnSchema)
+    tokenizeColumn: (atom, fnFindSchema = @findColumnSchema) ->
+        @tokenizeAtom(atom, @findColumnSchema, @parseNameOrExpression)
 
-    _parseNameOrExpression: (s) ->
+    tokenizeRhs: (atom) -> @tokenizeAtom(atom, @findColumnSchema)
+
+    parseNameOrExpression: (s) ->
         if rgxStar.test(s)
             tableName = s.match(rgxStar)[1]
             if tableName?
                 table = @fullNameFromString(tableName)
-                table.schema = @_findTableSchema(table)
+                table.schema = @findTableSchema(table)
             
             return sql.star(table)
 
@@ -295,13 +299,13 @@ class SqlFormatter
 
         return @fullNameFromString(s)
 
-    _findTableSchema: (token) ->
+    findTableSchema: (token) ->
         unless @schema? && token instanceof SqlFullName
             return null
 
         return @schema.tablesByMany[token.tip()] ? null
 
-    _findColumnSchema: (token) ->
+    findColumnSchema: (token) ->
         unless @schema? && token instanceof SqlFullName
             return
 
@@ -314,11 +318,18 @@ class SqlFormatter
             if column?
                 return column
 
+    findOutputColumnSchema: (token) ->
+        unless @targetSchema? && token instanceof SqlFullName
+            return
+
+        if token.prefix() in ['inserted', 'deleted', null]
+            t._schema = @targetSchema.columnsByProperty[token.tip()]
+
     _addSources: (a, type) ->
         for o in a
             s = if o instanceof type then o else new type(o)
 
-            token = @tokenizeAtom(s.atom, @_findTableSchema, @_parseNameOrExpression)
+            token = @tokenizeAtom(s.atom, @findTableSchema, @parseNameOrExpression)
             s._token = token
             s._schema = token._schema
 
@@ -386,7 +397,7 @@ class SqlFormatter
             ret += "TOP #{q.cntTake} "
 
         @columns = if q.columns.length > 0 then q.columns else [sql.star()]
-        ret += @doList(@columns, @column)
+        ret += @doList(@columns, @doAliasedColumn)
         ret += " FROM #{@_doTables()}" if q.tables.length > 0
 
         ret += @_doJoins()
@@ -408,54 +419,61 @@ class SqlFormatter
         "#{s} #{dir}"
 
     _doTargetTable: (name) ->
-        token = @tokenizeAtom(name, @_findTableSchema)
+        token = @tokenizeAtom(name, @findTableSchema)
         schema = token._schema
 
         if schema?
             @sources.push(_schema: schema, _token: token)
-            @targetTableSchema = schema
+            @targetSchema = schema
 
         return @_doToken(token)
 
-    insert: (i) ->
-        ret = "INSERT #{@_doTargetTable(i.targetTable)}"
+    insert: (stmt) ->
+        ret = "INSERT #{@_doTargetTable(stmt.targetTable)}"
         names = []
         values = []
-        for k, v of i.values
+        for k, v of stmt.values
             c = @_doInsertUpdateColumn(k)
             continue unless c
             names.push(c)
             values.push(@f(v))
 
-        ret += " (#{names.join(', ')}) VALUES (#{values.join(', ')})"
+        ret += " (#{names.join(', ')}) "
+        if stmt.outputColumns?
+            console.log(stmt.outputColumns)
+            outputs = (@doOutputColumn(o) for o in [].concat(stmt.outputColumns))
+            ret += "OUTPUT #{outputs.join(', ')} "
 
-    update: (u) ->
-        ret = "UPDATE #{@_doTargetTable(u.targetTable)} SET "
+        ret += "VALUES (#{values.join(', ')})"
+
+    update: (stmt) ->
+        ret = "UPDATE #{@_doTargetTable(stmt.targetTable)} SET "
 
         values = []
-        for k, v of u.values
+        for k, v of stmt.values
             c = @_doInsertUpdateColumn(k)
             continue unless c
             values.push("#{c} = #{@f(v)}")
 
         ret += values.join(', ')
 
-        ret += @where(u)
+        ret += @where(stmt)
         return ret
 
     _doInsertUpdateColumn: (atom) ->
+        alias = _.secon
         token = @tokenizeColumn(atom)
         schema = token._schema
         # MUST: change this behavior. This seemed useful at one point, but really it masks
         # a nasty error if the caller misspells a column name
-        if @targetTableSchema? && (not schema? || schema.isReadOnly)
+        if @targetSchema? && (not schema? || schema.isReadOnly)
             return false
 
         return @_doToken(token)
 
-    delete: (d) ->
-        ret = "DELETE FROM #{@_doTargetTable(d.targetTable)}"
-        ret += @where(d)
+    delete: (stmt) ->
+        ret = "DELETE FROM #{@_doTargetTable(stmt.targetTable)}"
+        ret += @where(stmt)
         return ret
 
 p = SqlFormatter.prototype

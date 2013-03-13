@@ -25,6 +25,8 @@ class Table extends DbObject
         @db.tablesByName[@name] = @
         @many = @one = @name
 
+    sqlAlias: () -> @many
+
     getKeysWithShape: () ->
         values = _.unwrapArgs(arguments)
         unless values?

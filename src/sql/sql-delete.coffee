@@ -1,13 +1,11 @@
 _ = require("more-underscore/src")
-{ SqlPredicate, SqlRawName, SqlFilteredStatement } = sql = require('./index')
+sql = require('./index')
+{ SqlFilteredStatement } = require('./shared')
 
 class SqlDelete extends SqlFilteredStatement
-    toSql: (f) ->
-        return f.delete(@)
+    toSql: (f) -> f.delete(@)
 
 _.extend(sql, {
     delete: (t, predicate) -> new SqlDelete(t, predicate)
     SqlDelete
 })
-
-module.exports = SqlDelete

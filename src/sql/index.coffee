@@ -61,7 +61,7 @@ class SqlFullName extends SqlToken
     constructor: (@parts) ->
     toSql: (f) -> f.fullName(@)
     tip: () -> _.last(@parts)
-    prefix: () -> @parts[@parts.length - 2]
+    prefix: () -> @parts[@parts.length - 2] ? null
 
 class SqlParens extends SqlToken
     constructor: (@contents) ->
@@ -170,27 +170,6 @@ class SqlStatement extends SqlToken
     constructor: (table) ->
         @targetTable = sql.name(table)
 
-class SqlFilteredStatement extends SqlStatement
-    constructor: (table, predicate) ->
-        super(table)
-        @where(predicate) if predicate?
-
-    where: (terms...) ->
-        @whereClause = SqlPredicate.addOrCreate(@whereClause, terms)
-        return @
-
-    and: (terms...) ->
-        return @where(terms...) unless @whereClause
-
-        @whereClause.and(terms...)
-        return @
-
-    or: (terms...) ->
-        return @where(sql.or(terms...)) unless @whereClause
-
-        @whereClause.or(terms...)
-        return @
-        
 module.exports = sql
 
 _.extend(sql, {
@@ -202,7 +181,6 @@ _.extend(sql, {
     SqlAnd
     SqlOr
     SqlStatement
-    SqlFilteredStatement
     SqlLiteral
     BinaryOp
     NaryOp
