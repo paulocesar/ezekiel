@@ -76,7 +76,7 @@ class TableGateway
             return @doOne(@_update, args, 'update', updateValues)
 
         # Ok, now we have work. Caller was lazy and threw us just one object, which must
-        # has keys along with values being updated. We need to separate keys from values.
+        # have keys along with values being updated. We need to separate keys from values.
         #
         # If the caller provides the value for a read-only DB key (eg, an identity column), then
         # that key is used as the only predicate, and we try to update everything else - even
