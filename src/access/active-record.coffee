@@ -6,31 +6,23 @@ queryBinder = require('./query-binder')
 states = [
     {
         name: 'unknown'
-        insert: (gw, cb) -> gw.insertOne(@changed, cb)
-        update: (gw, cb) -> gw.updateOne(@changed, cb)
-        upsert: (gw, cb) -> gw.upsertOne(@changed, cb)
-        delete: (gw, cb) -> gw.deleteOne(@changed, cb)
+        persist: (gw, cb) -> gw.upsertOne @changed, @makePersistHandler(cb)
+        delete: (gw, cb) -> gw.deleteOne @changed, @makeDeleteHandler(cb)
     }
     {
         name: 'loaded'
-        insert: (gw, cb) -> @demandState('insert', 'New')
-        update: (gw, cb) -> gw.updateOne(@changed, @loaded, cb)
-        upsert: (gw, cb) -> gw.updateOne(@changed, @loaded, cb)
-        delete: (gw, cb) -> gw.deleteOne(@loaded, cb)
+        persist: (gw, cb) -> gw.updateOne @changed, @loaded, @makePersistHandler(cb)
+        delete: (gw, cb) -> gw.deleteOne @loaded, @makeDeleteHandler(cb)
     }
     {
         name: 'new'
-        insert: (gw, cb) -> gw.insertOne(@changed, cb)
-        update: (gw, cb) -> @demandState('update', 'not new')
-        upsert: (gw, cb) -> gw.insertOne(@changed, cb)
-        delete: (gw, cb) -> @demandState('delete', 'not new')
+        persist: (gw, cb) -> gw.insertOne @changed, @makePersistHandler(cb)
+        delete: (gw, cb) -> @demandStateFor('delete', 'not new')
     }
     {
         name: 'deleted'
-        insert: (gw, cb) -> @demandState('insert', 'not deleted')
-        update: (gw, cb) -> @demandState('update', 'not deleted')
-        upsert: (gw, cb) -> @demandState('upsert', 'not deleted')
-        delete: (gw, cb) -> @demandState('delete', 'not deleted')
+        persist: (gw, cb) -> @demandStateFor('persist', 'not deleted')
+        delete: (gw, cb) -> @demandStateFor('delete', 'not deleted')
     }
 ]
 
@@ -39,10 +31,8 @@ class ActiveRecordState
     name: () -> states[@n].name
     toString: () -> "<ActiveRecordState: #{@name()}>"
 
-    insert: (gw, cb) -> states[@n].insert.call(@, gw, cb)
-    update: (gw, cb) -> states[@n].update.call(@, gw, cb)
+    persist: (gw, cb) -> states[@n].persist.call(@, gw, cb)
     delete: (gw, cb) -> states[@n].delete.call(@, gw, cb)
-    upsert: (gw, cb) -> states[@n].upsert.call(@, gw, cb)
 
     get: (key) -> @changed[key] ? @loaded[key]
 
@@ -53,13 +43,34 @@ class ActiveRecordState
 
       @changed[key] = value
 
-    demandState: (op, s) ->
+    demandStateFor: (op, s) ->
       e = "Cannot do operation #{op} in state #{@name()}. State must be #{s}"
       throw new Error(e)
 
+    makePersistHandler: (cb) ->
+        (err, outputValues) =>
+            return cb(err) if err
+
+            @loaded = _.extend(@loaded, @changed, outputValues)
+            @n = 1
+            @changed = {}
+            cb(null, outputValues)
+
+    makeDeleteHandler: (cb) ->
+        (err) =>
+            return cb(err) if err
+            @n = 3
+            cb()
+
     load: (o) ->
+        @demandStateFor('load', 'not deleted') if @n == 3
         @loaded = o
-        @n = 1 unless @n == 3
+        @n = 1
+
+    new: (o) ->
+        @demandStateFor('new', 'unknown') if @n != 0
+        @changed = o
+        @n = 2
 
 class ActiveRecord
     constructor: (@gw, @schema, @_s = null) ->
@@ -68,7 +79,8 @@ class ActiveRecord
         for c in @schema.columns
             @addColumnAccessor(c)
 
-    toString: () -> "<ActiveRecord for #{@schema.one}>"
+    toString: () -> "<ActiveRecord for #{@schema.one}, #{@_stateName()}>"
+    _stateName: () -> @_s.name()
 
     addColumnAccessor: (c) ->
         key = c.property
@@ -97,9 +109,11 @@ class ActiveRecord
       @_s.load(o)
       return @
 
-    insert: (cb) -> @_s.insert(@gw, cb)
-    update: (cb) -> @_s.update(@gw, cb)
-    upsert: (cb) -> @_s.upsert(@gw, cb)
+    new: (o) ->
+        @_s.new(o)
+        return @
+
+    persist: (cb) -> @_s.persist(@gw, cb)
     delete: (cb) -> @_s.delete(@gw, cb)
 
 module.exports = ActiveRecord

@@ -1,5 +1,6 @@
 h = require('../test-helper')
 require('../live-db')
+_ = require('underscore')
 
 ActiveRecord = h.requireSrc('access/active-record')
 
@@ -12,7 +13,7 @@ before () ->
 
 # SHOULD: move this into live-db.coffee, share. It's currently repeated.
 cntFighters = testData.cntFighters
-assertCount = (cntExpected, done, fn) ->
+assertCount = (cntExpected, done, fn = (cb) -> cb()) ->
     fn (err) ->
         return done(err) if err
         db.fighters.count (err, cnt) ->
@@ -20,7 +21,7 @@ assertCount = (cntExpected, done, fn) ->
             cnt.should.eql(cntExpected)
             h.cleanTestData(done)
 
-assertIdOne = (rowAssert, done, fn) ->
+assertIdOne = (rowAssert, done) ->
     fn (err) ->
         return done(err) if err
         db.fighters.findOne 1, (err, row) ->
@@ -48,17 +49,35 @@ describe 'ActiveRecord', () ->
             done()
 
     it 'Can insert a row', (done) ->
-        o = db.fighter(testData.newFighter())
-        assertCount cntFighters + 1, done, (cb) -> o.insert(cb)
+        o = db.fighter().new(testData.newFighter())
+        o._stateName().should.eql('new')
+
+        o.persist (err) ->
+            return done(err) if err
+            o._stateName().should.eql('loaded')
+            o.id.should.eql(cntFighters + 1)
+            assertCount cntFighters + 1, done
 
     it 'Can update a row', (done) ->
         db.fighter 1, (err, o) ->
             return done(err) if err
+            o._stateName().should.eql('loaded')
             o.firstName = 'The Greatest' # No wind or waterfall could stall me
-            assert = (o) -> o.firstName.should.eql('The Greatest')
-            assertIdOne assert, done, (cb) -> o.update(cb)
+
+            o.persist (err) ->
+                return done(err) if err
+                o._stateName().should.eql('loaded')
+                _.isEmpty(o._s.changed).should.be.true
+                o.firstName.should.eql('The Greatest')
+                done()
 
     it 'Can delete a row', (done) ->
         db.fighter 4, (err, o) ->
             return done(err) if err
-            assertCount cntFighters - 1, done, (cb) -> o.delete(cb)
+            o.id.should.eql(4)
+            o._stateName().should.eql('loaded')
+
+            o.delete (err) ->
+                return done(err) if err
+                o._stateName().should.eql('deleted')
+                assertCount cntFighters - 1, done

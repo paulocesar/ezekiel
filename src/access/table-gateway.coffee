@@ -6,18 +6,18 @@ queryBinder = require('./query-binder')
 class TableGateway
     constructor: (@db, @schema) ->
 
-    handle: () -> @schema.many
-    toString: () -> "<TableGateway to #{@handle()}>"
+    sqlAlias: () -> @schema.many
+    toString: () -> "<TableGateway to #{@sqlAlias()}>"
 
     findOne: () -> @doOne(@_find, arguments, 'find')
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
     _find: (predicate, cb) ->
-        q = sql.from(@handle()).where(predicate)
+        q = sql.from(@sqlAlias()).where(predicate)
         return @db.bindOrCall(q, 'oneObject', cb)
 
     _delete: (predicate, cb) ->
-        s = sql.delete(@handle(), predicate)
+        s = sql.delete(@sqlAlias(), predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
     doOne: (fn, args, opName, queryArgument = null) ->
@@ -55,7 +55,7 @@ class TableGateway
 
         @schema.demandInsertable(values)
 
-        q = sql.insert(@handle(), values)
+        q = sql.insert(@sqlAlias(), values)
         if @schema.hasReadOnly()
             q.output(@schema.readOnlyProperties())
             fn = 'oneRow'
@@ -87,15 +87,15 @@ class TableGateway
         throw new Error("we don't like work")
 
     _update: (predicate, cb, values) ->
-        s = sql.update(@handle(), values, predicate)
+        s = sql.update(@sqlAlias(), values, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
     selectMany: (predicate, cb) ->
-        q = sql.from(@handle()).where(predicate)
+        q = sql.from(@sqlAlias()).where(predicate)
         return @db.bindOrCall(q, 'allObjects', cb)
 
     count: (cb = null) ->
-        q = sql.from(@handle()).select(sql.count(1))
+        q = sql.from(@sqlAlias()).select(sql.count(1))
         return @db.bindOrCall(q, 'scalar', cb)
 
     bindError: (msg, cb) ->
