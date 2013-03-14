@@ -36,18 +36,39 @@ class Table extends DbObject
 
         return (k for k in @keys when k.matchesType(values))
 
-    isInsertable: (values) ->
-        for k, v of values
-            return false unless @columnsByProperty[k]?.isInsertable(v)
-        return true
+    isInsertable: (values, ignoreExtraneous = true) -> @getInsertErrors(values) == null
 
-    getInsertErrors: (values) ->
-        for k, v of values
-            if @hasProperty(k) then property(k).getInsertError(v) else "Unknown property #{k}."
+    hasExtraneous: (values) ->
+        for k of values
+            return true unless k of @columnsByProperty
+        return false
 
-    demandInsertable: (values) ->
-        return if @isInsertable(values)
-        errors = @getInsertErrors(values).join(' ')
+    # no heap allocations if there's no error. This can be called millions of times during an ETL
+    getInsertErrors: (values, ignoreExtraneous = true) ->
+        sins = null
+        for c in @columns
+            v = values[c.property]
+            if v?
+                # commission
+                e = c.buildInsertErrorMsg(v)
+                (sins ?= []).push(e) if e?
+            else
+                # ommission
+                if c.isRequired && !c.isReadOnly
+                    (sins ?= []).push("Missing required #{c}.")
+
+        return sins if ignoreExtraneous
+
+        for k of values
+            unless k of @columnsByProperty
+                sins ?= []
+                sins.push("Extraneous property #{k} doesn't correspond to any columns in #{@}")
+    
+        return sins
+
+    demandInsertable: (values, ignoreExtraneous = true) ->
+        return if @isInsertable(values, ignoreExtraneous)
+        errors = @getInsertErrors(values, ignoreExtraneous).join('')
         throw new Error(errors)
 
     coversSomeKey: (values) -> _.some(@keys, (k) -> k.coveredBy(values))

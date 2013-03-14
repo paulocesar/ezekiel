@@ -90,16 +90,23 @@ class Column extends DbObject
         @property = @name
         @table.columnsByName[@name] = @
 
-    isInsertable: (v) -> @getInsertError(v) == ''
+    isInsertable: (v) -> @_getInsertError(v) == null
 
-    getInsertError: (v) ->
+    buildInsertErrorMsg: (v) ->
+        error = @_getInsertError(v)
+        if error?
+            return "Can't insert value #{v} into #{@}: #{e}."
+        else
+            return null
+
+    # MUST: deal with data types
+    _getInsertError: (v) ->
         if @isIdentity
-            return "#{@} is an identity column and cannot be inserted into."
-        if @isReadOnly
-            return "#{@} is a read-only column and cannot be inserted into."
-
-        # MUST: deal with data types
-        return ''
+            return "identity column"
+        else if @isReadOnly
+            return "read-only column"
+        else
+            return null
 
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
     matchesType: (v) -> @jsType.matchesType(v)
@@ -167,7 +174,10 @@ class Key extends Constraint
 
         return o
 
-    coveredBy: (values) -> _.every(@columns, (c) -> c.property of values)
+    coveredBy: (values) ->
+        for c in @columns
+            return false unless c.property of values
+        return true
 
 class ForeignKey extends Constraint
     constructor: (@table, schema) ->
