@@ -1,14 +1,11 @@
 h = require('../test-helper')
-require('../live-db')
 A = require('assert')
 
 { DbSchema, Table, Column } = h.requireSrc('schema')
 
-schema = tables = fighters = null
-before () ->
-    schema = h.liveDb.schema
-    tables = schema.tablesByMany
-    fighters = tables.fighters
+schema = h.getCookedSchema()
+tables = schema.tablesByMany
+fighters = tables.fighters
 
 assertUniq = (uq, a) ->
     a.should.not.be.empty
