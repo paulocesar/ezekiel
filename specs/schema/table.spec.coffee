@@ -93,10 +93,20 @@ describe 'Table', () ->
         rows = h.testData.newData()
         uq = "UQ_Fighters_LastName_FirstName"
 
-
         merge = fighters.classifyRowsForMerging(rows)
         o = mergeObj()
         o.mergesByKey[uq] = rows
+
+        merge.should.eql(o)
+
+        rows[0].id = 1
+        rows[1].id = 2
+        rows[1].lastName = null
+
+        merge = fighters.classifyRowsForMerging(rows)
+        o = mergeObj()
+        o.updatesByKey.PK_Fighters = [rows[0], rows[1]]
+        o.mergesByKey[uq] = [rows[2], rows[3]]
 
         merge.should.eql(o)
 
@@ -105,4 +115,3 @@ describe 'Table', () ->
         rows[0].lastName = null
         f = () -> fighters.classifyRowsForMerging(rows)
         f.should.throw(/Cannot merge row/)
-
