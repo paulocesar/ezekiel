@@ -86,15 +86,23 @@ describe 'Table', () ->
         errors.should.match(/Cannot write value/)
         errors.should.match(/identity column/)
 
+    byKey = () -> { PK_Fighters: [], UQ_Fighters_LastName_FirstName: [] }
+    mergeObj = () -> { inserts: [], updatesByKey: byKey(), mergesByKey: byKey() }
+
     it 'classifies rows for merging', ->
         rows = h.testData.newData()
         uq = "UQ_Fighters_LastName_FirstName"
 
-        byKey = () -> { PK_Fighters: [], UQ_Fighters_LastName_FirstName: [] }
-        mergeObj = () -> { inserts: [], updatesByKey: byKey(), mergesByKey: byKey() }
 
         merge = fighters.classifyRowsForMerging(rows)
         o = mergeObj()
         o.mergesByKey[uq] = rows
 
         merge.should.eql(o)
+
+    it 'throws if bulk merge has bad row', ->
+        rows = h.testData.newData()
+        rows[0].lastName = null
+        f = () -> fighters.classifyRowsForMerging(rows)
+        f.should.throw(/Cannot merge row/)
+

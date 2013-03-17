@@ -30,7 +30,8 @@ class Table extends DbObject
     getKeysWithShape: () ->
         values = _.unwrapArgs(arguments)
         unless values?
-            e = "No arguments given. You must provide values to specify the key shape you seek. " +
+            e = "getKeysWithShape: No arguments given. You must provide values to specify " +
+                "the key shape you seek. " +
                 "Examples: getKeysWithShape(20), getKeysWithShape('foo', 'bar'), etc."
             throw new Error(e)
 
@@ -86,7 +87,7 @@ class Table extends DbObject
         else
             unless @coversSomeKey(row)
                 return true unless needsMsg
-                (sins ?= []).push("Row #{row} does not cover any keys in #{@}")
+                (sins ?= []).push("Row does not cover any keys in #{@}.")
 
         for c in @columns
             v = row[c.property]
@@ -110,8 +111,7 @@ class Table extends DbObject
 
         errors = [].concat(
             for op in ['Insert', 'Update']
-                fn = @["get#{op}Errors"]
-                fn.apply(@, arguments).join(' ')
+                @["get#{op}Errors"].apply(@, arguments)
         )
 
         return _.uniq(errors)
@@ -188,8 +188,8 @@ class Table extends DbObject
             canUpdate = @canUpdate(r)
 
             unless canInsert || canUpdate
-                errors = @getMergeErrors(r)
-                throw new Error("classifyRowsForMerging: Can't merge row #{r}: #{errors}")
+                errors = @getMergeErrors(r).join(' ')
+                throw new Error("classifyRowsForMerging: Cannot merge row #{r}: #{errors}")
 
             key = @getBestKeyForMerging(r)
 
