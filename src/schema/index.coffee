@@ -8,7 +8,7 @@ class DbObject
         _.defaults(@, schema)
 
     toString: () ->
-        s = "#{@constructor.name} \"#{@name}\""
+        s = "<#{@constructor.name} #{@name}>"
         return s
 
     addEnforcingPosition: (array, newbie, position = newbie.position) ->
@@ -21,23 +21,23 @@ class DbObject
 
         array.push(newbie)
 
-# Many DB objects can have handles in JavaScript land to decouple JS code from DB schema. For
-# example, tables can have a 'many' handle and a 'one' handle (to be used with collections and
-# single objects, respectively). The many handle is used to access the table gateway and in FROM
-# / JOIN clauses backed by the schema. The one handle is used to retrieve ActiveRecord instances.
+# DB objects can have nicknames in JavaScript land to decouple JS code from DB schema. For example,
+# tables can have a 'many' nickname and a 'one' nickname (to be used with collections and single
+# objects, respectively). 'many' is used as a SQL alias for the table in schema-aware queries, as
+# the name of a TableGateway, etc, while 'one' is used to retrieve ActiveRecord instances.
 #
-# Columns can have a 'property' handle, which is used as the column name in schema-backed queries
-# and name of the property encapsulating the column in an ActiveRecord instance.
+# Columns can have a 'property' nickname, which is used as a SQL alias in schema-aware queries
+# and as the name of the property encapsulating the column in an ActiveRecord instance.
 #
-# The 'name' property in a schema object is ALWAYS its name in the database. If no handles are
-# provided, the table name is be used for the table in both many and one situations. The column
-# name is used as the JS property name. Thus people can be 100% oblivious to the handle mechanism
-# and stuff just works. Those who want to be able to say pretty things like:
+# The 'name' property in a schema object is ALWAYS its name in the database. If no nicknames are
+# provided, the table name is be used for the table in both many and one situations. The column name
+# is used as the JS property name. Thus people can be 100% oblivious to the nickname mechanism and
+# stuff just works. Those who want to be able to say pretty things like:
 #
 # db.customers.findMany()
 # db.customer(100, cb)
 #
-# Must set many/one in tables and property in columns as they see fit.
+# Must set 'many'/'one' in tables and 'property' in columns as they see fit.
 #
 # The schema API however ALWAYS WORKS WITH NAMES to ensure sanity. Names are immutable.
 
@@ -46,6 +46,7 @@ jsTypes = {
         matchesType: _.isNumber
         convert: Number
         name: 'Number'
+        numeric: true
 
     boolean:
         matchesType: _.isBoolean
@@ -53,17 +54,20 @@ jsTypes = {
         # about it
         convert: Boolean
         name: 'Boolean'
+        numeric: false
 
     string:
         matchesType: _.isString
         convert: String
         name: 'String'
+        numeric: false
 
     date:
         matchesType: _.isDate
         # MUST: beef date conversion way up
         convert: (v) -> new Date(Date.parse(v.toString()))
         name: 'Date'
+        numeric: false
 }
 
 
@@ -90,23 +94,26 @@ class Column extends DbObject
         @property = @name
         @table.columnsByName[@name] = @
 
-    isInsertable: (v) -> @_getInsertError(v) == null
+    canInsert: (v) -> !@getInsertError(v, false)
 
-    buildInsertErrorMsg: (v) ->
-        error = @_getInsertError(v)
-        if error?
-            return "Can't insert value #{v} into #{@}: #{e}."
-        else
-            return null
+    getInsertError: (v, ignoreReadOnly = true, needsMsg = true) ->
+        @getUpdateError(v, ignoreReadOnly && !@isPartOfKey, needsMsg)
 
     # MUST: deal with data types
-    _getInsertError: (v) ->
+    getUpdateError: (v, ignoreReadOnly = true, needsMsg = true) ->
+        return null if ignoreReadOnly
+
+        e = null
         if @isIdentity
-            return "identity column"
+            return true unless needsMsg
+            e = "identity column"
         else if @isReadOnly
-            return "read-only column"
+            return true unless needsMsg
+            e = "read-only column"
         else
             return null
+
+        return "Cannot write value #{v} into #{@}: #{e}."
 
     isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
     matchesType: (v) -> @jsType.matchesType(v)
@@ -125,6 +132,7 @@ class Constraint extends DbObject
         col = @table.columnsByName[schema.columnName]
         col.isPartOfKey = true if @isKey
         @addEnforcingPosition(@columns, col, schema.position)
+        @isComposite = @columns.length > 1
 
     toString: () -> super.toString() + ", type=#{@type}"
 
@@ -138,7 +146,12 @@ class Key extends Constraint
         if @type == 'PRIMARY KEY'
             @table.pk = @
 
-    matchesType: () ->
+    numeric: () ->
+        for c in @columns
+            return false unless c.jsType.numeric
+        return true
+
+    matchesShape: () ->
         keyValues = _.unwrapArgs(arguments)
 
         unless keyValues?
@@ -163,7 +176,7 @@ class Key extends Constraint
             e = "You must provide the key values corresponding to the columns in #{@}"
             throw new Error(e)
 
-        unless @matchesType(keyValues)
+        unless @matchesShape(keyValues)
             e = "The key values provided (#{keyValues}) do not match the shape of #{@}"
             throw new Error(e)
 
@@ -176,7 +189,7 @@ class Key extends Constraint
 
     coveredBy: (values) ->
         for c in @columns
-            return false unless c.property of values
+            return false unless values[c.property]?
         return true
 
 class ForeignKey extends Constraint

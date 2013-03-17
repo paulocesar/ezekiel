@@ -75,7 +75,7 @@ class TableGateway
         if (cntKeyValues > 0)
             return @doOne(@_update, args, 'update', updateValues)
 
-        # Ok, now we have work. Caller was lazy and threw us just one object, which must
+        # Ok, now we have work. The caller was lazy and threw us just one object, which must
         # have keys along with values being updated. We need to separate keys from values.
         #
         # If the caller provides the value for a read-only DB key (eg, an identity column), then

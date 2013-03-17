@@ -171,6 +171,9 @@ class SqlOr extends SqlBooleanOp
 
 class SqlStatement extends SqlToken
     constructor: (table) ->
+        unless table?
+            throw new Error('SqlStatement constructor: you must provide a table')
+
         @targetTable = sql.name(table)
 
 module.exports = sql
