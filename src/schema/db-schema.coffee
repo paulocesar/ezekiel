@@ -2,14 +2,13 @@ _ = require('more-underscore/src')
 { DbObject, Table, Column, Key, ForeignKey } = dbObjects = require('./index')
 
 class DbSchema extends DbObject
-    constructor: (schema) ->
+    constructor: () ->
         @tables = []
         @tablesByName = {}
         @constraintsByName = {}
 
-        @load(schema) if schema?
-
     finish: () ->
+        @tables = _.sortBy(@tables, (t) -> t.name)
         @tablesByMany = {}
         @tablesByOne = {}
         for t in @tables
@@ -18,9 +17,7 @@ class DbSchema extends DbObject
 
             @assertUniqHandle(t, t.one, @tablesByOne)
             @tablesByOne[t.one] = t
-            t.columnsByProperty = columns = {}
-            for c in t.columns
-                columns[c.property] = c
+            t.finish()
 
         return @
 
@@ -29,28 +26,54 @@ class DbSchema extends DbObject
         e = "Tables #{t} and #{store[key]} have the same handle of #{key}"
         throw new Error(e)
 
-    load: (schema) ->
-        @addSchemaItems(Table, schema.tables, @)
-        @tables = _.sortBy(@tables, (t) -> t.name)
-        @addSchemaItems(Column, schema.columns)
-        @addSchemaItems(Key, schema.keys)
-        @addSchemaItems(ForeignKey, schema.foreignKeys)
+    addTables: () ->
+        for a in arguments
+            continue if a.db == @
 
-        @addKeyColumns(schema.keyColumns)
+            table = dbObjects.table(a)
+            if table.name of @tablesByName
+                throw new Error("#{@} already has a table named #{table.name}")
 
-    addSchemaItems: (constructor, list, parent) ->
+            @tables.push(table)
+            @tablesByName[table.name] = table
+            table.attach(@)
+
+        return @
+
+    addConstraints: () ->
+        for c in arguments
+            @constraintsByName[c.name] = c
+        return @
+
+    loadDataDictionary: (dataDictionary) ->
+        @addTables.apply(@, dataDictionary.tables)
+        @_addTableChildren(dataDictionary, 'columns')
+        @_addTableChildren(dataDictionary, 'keys')
+        @_addTableChildren(dataDictionary, 'foreignKeys')
+
+        for kc in dataDictionary.keyColumns
+            c = @constraintsByName[kc.constraintName]
+            c.addColumn(kc)
+
+        return @
+
+    _addTableChildren: (dict, property) ->
+        list = dict[property]
         for i in list
-            p = parent ? @tablesByName[i.tableName]
+            table = @tablesByName[i.tableName]
+            
             # If parent is a view, then we don't have it, so bail out. MUST: handle views
             # in the future
-            return unless p?
-            new constructor(p, i)
+            return unless table?
 
-    addKeyColumns: (list) ->
-        for i in list
-            c = @constraintsByName[i.constraintName]
-            c.addColumn(i)
+            singular = property.slice(0, -1)
+            child = dbObjects[singular](i)
 
-    table: (schema) -> new Table(@, schema)
+            addFnName = 'add' + _.toUpperInitial(property)
+            table[addFnName](child)
+
+    table: (schema) ->
+        @addTables(schema)
+        return _.last(@tables)
 
 module.exports = dbObjects.DbSchema = DbSchema

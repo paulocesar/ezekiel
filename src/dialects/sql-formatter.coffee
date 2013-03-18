@@ -488,3 +488,4 @@ p.format = p.f
 module.exports = SqlFormatter
 
 require('./bulk-formatter')
+require('./schema-formatter')

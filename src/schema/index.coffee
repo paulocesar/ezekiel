@@ -1,25 +1,36 @@
-U = _ = require('more-underscore/src')
+_ = require('more-underscore/src')
 
 class DbObject
-    constructor: (schema) ->
-        unless schema.name?
-            throw new Error("You must provide a name for each schema object")
+    constructor: (meta) ->
+        unless meta.name?
+            throw new Error("You must provide a name for each database object")
 
-        _.defaults(@, schema)
+        _.defaults(@, meta)
 
     toString: () ->
         s = "<#{@constructor.name} #{@name}>"
         return s
 
-    addEnforcingPosition: (array, newbie, position = newbie.position) ->
+    finish: () ->
+
+    pushEnforcingPosition: (array, newbie, position = newbie.position) ->
         expectedPosition = array.length + 1
 
-        if expectedPosition != position
-            msg = "Cannot add [#{newbie}] to [#{@}]. Expected position to be " +
+        if position? && expectedPosition != position
+            msg = "Cannot add #{newbie} to #{@}. Expected position to be " +
                 "#{expectedPosition} but it was #{position}"
             throw new Error(msg)
 
         array.push(newbie)
+
+    attach: (table) ->
+        if @table?
+            throw new Error("attach: #{@} is already attached to #{@table}")
+
+        unless table?
+            throw new Error("attach: you must provide a table")
+
+        @table = table
 
 # DB objects can have nicknames in JavaScript land to decouple JS code from DB schema. For example,
 # tables can have a 'many' nickname and a 'one' nickname (to be used with collections and single
@@ -78,7 +89,7 @@ dbTypeToJsType = {
 }
 
 class Column extends DbObject
-    constructor: (@table, schema) ->
+    constructor: (schema) ->
         super(schema)
 
         t = dbTypeToJsType[@dbDataType]
@@ -86,13 +97,7 @@ class Column extends DbObject
         @isPartOfKey = false
         @isReadOnly = @isIdentity || @isComputed
         @isRequired = !@isNullable
-        if @position?
-            @table.addEnforcingPosition(@table.columns, @)
-        else
-            @table.columns.push(@)
-
         @property = @name
-        @table.columnsByName[@name] = @
 
     canInsert: (v) -> !@getInsertError(v, false)
 
@@ -122,17 +127,30 @@ class Column extends DbObject
 class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']
 
-    constructor: (@table, schema) ->
-        U.defaults(@, schema)
+    constructor: (schema) ->
+        _.defaults(@, schema)
         @columns = []
         @isKey = @type != 'FOREIGN KEY'
-        @table.db.constraintsByName[@name] = @
 
-    addColumn: (schema) ->
-        col = @table.columnsByName[schema.columnName]
+    addColumn: (meta) ->
+        unless @table?
+            throw new Error("addColumns: you must attach #{@} to a table before adding columns")
+
+        name = if _.isString(meta) then meta else meta.columnName ? meta.name
+        unless name?
+            throw new Error("addColumns: you must provide a column name")
+
+        col = @table.columnsByName[name]
+        unless col?
+            throw new Error("addColumns: could not find column #{name} in #{@table}")
+
         col.isPartOfKey = true if @isKey
-        @addEnforcingPosition(@columns, col, schema.position)
+        @pushEnforcingPosition(@columns, col, meta.position)
         @isComposite = @columns.length > 1
+
+    attach: (table) ->
+        super(table)
+        @table.db?.addConstraints(@)
 
     toString: () -> super.toString() + ", type=#{@type}"
 
@@ -140,18 +158,16 @@ class Constraint extends DbObject
 # Operator, please
 # Pass me back to my mind
 class Key extends Constraint
-    constructor: (@table, schema) ->
-        super(@table, schema)
-        @table.keys.push(@)
-        if @type == 'PRIMARY KEY'
-            @table.pk = @
+    constructor: (schema) ->
+        super(schema)
+        @isPK = (@type == 'PRIMARY KEY')
 
     numeric: () ->
         for c in @columns
             return false unless c.jsType.numeric
         return true
 
-    contains: (column) -> U.contains(@columns, column)
+    contains: (column) -> _.contains(@columns, column)
 
     matchesShape: () ->
         keyValues = _.unwrapArgs(arguments)
@@ -195,29 +211,33 @@ class Key extends Constraint
         return true
 
 class ForeignKey extends Constraint
-    constructor: (@table, schema) ->
-        super(@table, schema)
+    finish: () ->
+        db = @table.db
+        unless db?
+            e = "You must attach #{@table} to a database before finishing a ForeignKey"
+            throw new Error(e)
 
-        @parentKey = @table.db.constraintsByName[@parentKeyName]
+        @parentKey = db.constraintsByName[@parentKeyName]
+        unless @parentKey?
+            e = "Could not find parent key #{@parentKeyName} for #{@} in #{db}"
+            throw new Error(e)
+
         @parentTable = @parentKey.table
-
-        if (@table == @parentTable)
-            @table.selfFKs.push(@)
-            return
-
-        @table.foreignKeys.push(@)
-
-        unless _.contains(@table.belongsTo, @parentTable)
-             @table.belongsTo.push(@parentTable)
-
-        unless _.contains(@parentTable.hasMany, @table)
-            @parentTable.hasMany.push(@table)
-
         @parentTable.incomingFKs.push(@)
 
+schema = {
+    DbObject
+    Constraint
+    Key
+    ForeignKey
+    Column
 
+    foreignKey: (meta) -> if meta instanceof ForeignKey then meta else new ForeignKey(meta)
+    key: (meta) -> if meta instanceof Key then meta else new Key(meta)
+    column: (meta) -> if meta instanceof Column then meta else new Column(meta)
+}
 
-module.exports = { DbObject, Column, Key, ForeignKey, Constraint }
+module.exports = schema
 
 require('./table')
 require('./db-schema')

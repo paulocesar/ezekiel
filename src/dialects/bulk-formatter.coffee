@@ -1,4 +1,4 @@
-U = require('more-underscore/src')
+_ = require('more-underscore/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')
@@ -9,7 +9,7 @@ bulk = {
             throw new Error('merge: you must provide a targetTable')
 
         rows = merge?.rows
-        unless rows? && U.isArray(rows) && !U.isEmpty(rows)
+        unless rows? && _.isArray(rows) && !_.isEmpty(rows)
             throw new Error('merge: you must provide a non-empty array of rows to be merged')
 
         target = @tokenizeTable(merge.targetTable)
@@ -37,15 +37,15 @@ bulk = {
         return lines.join('\n')
 
     _addBulkInserts: (rows, lines, cleanup) ->
-        return if U.isEmpty(rows)
+        return if _.isEmpty(rows)
         # MUST: implement
 
     _addBulkUpdates: (keyName, rows, lines, cleanup) ->
-        return if U.isEmpty(rows)
+        return if _.isEmpty(rows)
         # MUST: implement
 
     _addBulkMerges: (keyName, rows, lines, cleanup) ->
-        return if U.isEmpty(rows)
+        return if _.isEmpty(rows)
         idxCreateTempTable = @i++
         key = @table.db.constraintsByName[keyName]
 
@@ -59,8 +59,10 @@ bulk = {
             columns.push(c)
             cntValuesByColumn[c.name] = 0
 
+        tempName = @nameTempTable('BulkMerge')
+
         for r in rows
-           lines[@idx++] = @_doInsert(key, r, columns, cntValuesByColumn)
+           lines[@idx++] = @_doInsert(tempName, key, r, columns, cntValuesByColumn)
 
         tempTableColumns = []
         for c in columns
@@ -68,13 +70,17 @@ bulk = {
             continue if cntValues == 0
 
             nullable = cntValues < rows.length
-            tempColumn = { name: c.name, isNullable: nullable, dbDataType: c.dbDataType, maxLength: c.maxLength }
+            tempColumn = {
+                name: c.name, isNullable: nullable, dbDataType: c.dbDataType,
+                maxLength: c.maxLength
+            }
             tempTableColumns.push(tempColumn)
 
-        console.log(tempTableColumns)
 
 
-    _doInsert: (key, row, columns, cntValuesByColumn) ->
+
+
+    _doInsert: (tempName, key, row, columns, cntValuesByColumn) ->
         names = []
         values = []
         for c in @table.columns
@@ -85,7 +91,7 @@ bulk = {
             values.push(@f(v))
             cntValuesByColumn[c.name]++
 
-        return "INSERT foo (#{names.join(',')}) VALUES (#{values.join(',')})"
+        return "INSERT #{tempName} (#{names.join(',')}) VALUES (#{values.join(',')})"
 }
 
-U.extend(SqlFormatter.prototype, bulk)
+_.extend(SqlFormatter.prototype, bulk)

@@ -20,9 +20,10 @@ before (done) ->
     h.cleanTestData = cleanTestData
 
     h.connectToDb (freshDb) ->
-        freshDb.utils.buildFullSchema (err, s) ->
+        freshDb.utils.buildFullSchema (err, dataDictionary) ->
             done(err) if err
-            s = new DbSchema(s)
+            s = new DbSchema()
+            s.loadDataDictionary(dataDictionary)
             h.cookSchema(s)
             freshDb.loadSchema(s)
             h.liveDb = h.db = freshDb

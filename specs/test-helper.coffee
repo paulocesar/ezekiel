@@ -72,7 +72,7 @@ getRawSchema = () ->
 
 newRawSchema = () ->
     s = new DbSchema()
-    s.load(getMetaData())
+    s.loadDataDictionary(getMetaData())
     return s.finish()
 
 cookedSchema = null
@@ -82,7 +82,7 @@ getCookedSchema = () ->
 
 newCookedSchema = () ->
     s = new DbSchema()
-    s.load(getMetaData())
+    s.loadDataDictionary(getMetaData())
     return cookSchema(s)
 
 cookSchema = (s) ->

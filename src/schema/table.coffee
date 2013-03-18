@@ -2,8 +2,8 @@ _ = require('more-underscore/src')
 { DbObject, Column } = dbObjects = require('./index')
 
 class Table extends DbObject
-    constructor: (@db, schema) ->
-        super(schema)
+    constructor: (meta) ->
+        super(meta)
         @columns = []
 
         @columnsByName = {}
@@ -17,15 +17,77 @@ class Table extends DbObject
         @hasMany = []
         @belongsTo = []
 
-        if @name of @db.tablesByName
-          e = "There is already a table named #{@name} in #{@db}"
-          throw new Error(e)
-
-        @db.tables.push(@)
-        @db.tablesByName[@name] = @
         @many = @one = @name
 
     sqlAlias: () -> @many
+
+    column: (meta) ->
+        @addColumns(meta)
+        return _.last(columns)
+
+    addColumns: () ->
+        for a in arguments
+            continue if a.table == @
+
+            column = dbObjects.column(a)
+            if column.name of @columnsByName
+                throw new Error("addColumns: #{@} already has a column named #{column.name}")
+
+            column.attach(@)
+            @pushEnforcingPosition(@columns, column)
+            @columnsByName[column.name] = column
+
+        return @
+
+    addKeys: () ->
+        for k in arguments
+            key = dbObjects.key(k)
+            continue if key.table == @
+
+            if key.isPK
+                if @pk?
+                    e = "#{key} is a primary key, but #{@} already has PK #{@pk}"
+                    throw new Error(e)
+                else
+                    @pk = key
+
+            key.attach(@)
+            @keys.push(key)
+
+        return @
+
+    addForeignKeys: () ->
+        for a in arguments
+            fk = dbObjects.foreignKey(a)
+            continue if fk.table == @
+            fk.attach(@)
+            @foreignKeys.push(fk)
+
+        return @
+
+    attach: (db) ->
+        if @db?
+            throw new Error("attach: #{@} is already attached to #{@db}")
+      
+        unless db?
+            throw new Error('attach: you must provide a DbSchema instance')
+
+        @db = db
+
+        for constraints in [@keys, @foreignKeys, @selfFKs]
+            @db.addConstraints.apply(@db, constraints)
+
+        return @
+
+    finish: () ->
+        @columnsByProperty = {}
+        for c in @columns
+            @columnsByProperty[c.property] = c
+
+        for children in [@keys, @foreignKeys]
+            child.finish() for child in children
+
+        return @
 
     getKeysWithShape: () ->
         values = _.unwrapArgs(arguments)
@@ -224,7 +286,7 @@ class Table extends DbObject
     hasProperty: (p) -> p of @columnsByProperty
 
     some: (p) -> _.some(@columns, (c) -> c[p])
-    column: (schema) -> new Column(@, schema)
     readOnlyProperties: () -> (c.property for c in @columns when c.isReadOnly)
 
 module.exports = dbObjects.Table = Table
+dbObjects.table = (meta) -> new Table(meta)

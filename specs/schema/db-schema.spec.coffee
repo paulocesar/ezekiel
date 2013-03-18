@@ -34,7 +34,7 @@ describe 'DbSchema', () ->
 
     it 'throws if a table name clashes', ->
         s = h.newRawSchema()
-        (() -> s.table({name: 'Fighters'})).should.throw(/already a table named/)
+        (() -> s.table({name: 'Fighters'})).should.throw(/already has a table named/)
 
     it 'throws if handle clashes', ->
         schema = h.newRawSchema()
