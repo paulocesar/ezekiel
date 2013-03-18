@@ -175,6 +175,7 @@ class Table extends DbObject
         unless _.isArray(rows)
             throw new Error('classifyRowsForMerging: you must provide an array of rows')
 
+        cntRows = 0
         inserts = []
         updatesByKey = {}
         mergesByKey = {}
@@ -203,9 +204,10 @@ class Table extends DbObject
             else
                 throw new Error( "classifyRowsForMerging: bug triggered by row #{r}")
 
+            cntRows++
             target.push(r)
 
-        return { inserts, updatesByKey, mergesByKey }
+        return { cntRows, inserts, updatesByKey, mergesByKey }
 
     demandInsertable: (row, ignoreExtraneous = true) ->
         return if @canInsert(row, ignoreExtraneous)

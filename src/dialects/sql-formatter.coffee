@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+U = _ = require('more-underscore/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 
@@ -42,18 +42,18 @@ class SqlFormatter
     parens: (contents) -> "(#{contents.toSql(@)})"
 
     and: (terms) ->
-        t = _.map(terms, @f, @)
+        t = U.map(terms, @f, @)
         return "(#{t.join(" AND " )})"
 
     or: (terms) ->
-        t = _.map(terms, @f, @)
+        t = U.map(terms, @f, @)
         return "(#{t.join(" OR " )})"
 
     rawName: (n) -> @fullNameFromString(n.name).toSql(@)
 
     fullName: (m) -> @joinNameParts(m.parts)
 
-    joinNameParts: (names) -> _.map(names, (p) -> "[#{p}]").join(".")
+    joinNameParts: (names) -> U.map(names, (p) -> "[#{p}]").join(".")
 
     fullNameFromString: (s) ->
         parts = []
@@ -288,6 +288,8 @@ class SqlFormatter
 
         return token
 
+    tokenizeTable: (atom) -> @tokenizeAtom(atom, @findTableSchema, @parseNameOrExpression)
+
     tokenizeColumn: (atom, fnFindSchema = @findColumnSchema) ->
         @tokenizeAtom(atom, fnFindSchema, @parseNameOrExpression)
 
@@ -296,10 +298,7 @@ class SqlFormatter
     parseNameOrExpression: (s) ->
         if rgxStar.test(s)
             tableName = s.match(rgxStar)[1]
-            if tableName?
-                table = @fullNameFromString(tableName)
-                table.schema = @findTableSchema(table)
-            
+            table = @tokenizeTable(tableName) if tableName?
             return sql.star(table)
 
         if rgxExpression.test(s)
@@ -337,7 +336,7 @@ class SqlFormatter
         for o in a
             s = if o instanceof type then o else new type(o)
 
-            token = @tokenizeAtom(s.atom, @findTableSchema, @parseNameOrExpression)
+            token = @tokenizeTable(s.atom)
             s._token = token
             s._schema = token._schema
 
@@ -427,7 +426,7 @@ class SqlFormatter
         "#{s} #{dir}"
 
     _doTargetTable: (name) ->
-        token = @tokenizeAtom(name, @findTableSchema)
+        token = @tokenizeTable(name)
         schema = token._schema
 
         if schema?
@@ -487,3 +486,5 @@ p = SqlFormatter.prototype
 p.format = p.f
 
 module.exports = SqlFormatter
+
+require('./bulk-formatter')

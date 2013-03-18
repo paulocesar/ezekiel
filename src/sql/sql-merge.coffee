@@ -4,12 +4,11 @@ shared = require('./shared')
 
 class SqlMerge extends SqlStatement
     constructor: (table) -> super(table)
-    using: (@values) ->
-    source: (@values) ->
+    using: (@rows) -> @
+    source: (@rows) -> @
     toSql: (f) -> f.merge(@)
 
 _.extend(sql, {
     merge: (t) -> new SqlMerge(t)
-
     SqlMerge
 })

@@ -84,7 +84,10 @@ describe 'Table', () ->
         errors.should.match(/identity column/)
 
     byKey = () -> { PK_Fighters: [], UQ_Fighters_LastName_FirstName: [] }
-    mergeObj = () -> { inserts: [], updatesByKey: byKey(), mergesByKey: byKey() }
+    mergeObj = () -> {
+        cntRows: h.testData.cntFighters
+        inserts: [], updatesByKey: byKey(), mergesByKey: byKey()
+    }
 
     it 'classifies rows for merging', ->
         rows = h.testData.newData()
@@ -102,8 +105,8 @@ describe 'Table', () ->
 
         merge = fighters.classifyRowsForMerging(rows)
         o = mergeObj()
-        o.updatesByKey.PK_Fighters = [rows[0], rows[1]]
-        o.mergesByKey[uq] = [rows[2], rows[3]]
+        o.updatesByKey.PK_Fighters = rows.slice(0, 2)
+        o.mergesByKey[uq] = rows.slice(2)
 
         merge.should.eql(o)
 

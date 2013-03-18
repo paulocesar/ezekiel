@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+U = _ = require('more-underscore/src')
 
 class DbObject
     constructor: (schema) ->
@@ -123,7 +123,7 @@ class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']
 
     constructor: (@table, schema) ->
-        _.defaults(@, schema)
+        U.defaults(@, schema)
         @columns = []
         @isKey = @type != 'FOREIGN KEY'
         @table.db.constraintsByName[@name] = @
@@ -150,6 +150,8 @@ class Key extends Constraint
         for c in @columns
             return false unless c.jsType.numeric
         return true
+
+    contains: (column) -> U.contains(@columns, column)
 
     matchesShape: () ->
         keyValues = _.unwrapArgs(arguments)

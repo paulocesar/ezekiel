@@ -38,12 +38,10 @@ assertSqlFormatting = (schema, sql, expected, debug) ->
     f = new SqlFormatter(schema)
     ret = f.format(sql)
     if (ret != expected) || debug
-        console.log("--- Return ---")
+        console.log("\n--- Return ---")
         console.log(ret)
-        console.log("---")
         console.log("--- Expected ---")
         console.log(expected)
-        console.log("---")
 
     ret.should.eql(expected)
 
