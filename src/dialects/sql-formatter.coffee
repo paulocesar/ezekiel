@@ -108,6 +108,12 @@ class SqlFormatter
         alias = _.secondOrNull(output)
         return @doAliasedToken(t, alias)
 
+    doNameList: (names, separator = ', ') ->
+        r = Array(names.length)
+        for n, i in names
+            r[i] = @delimit(n.name ? n)
+        return r.join(separator)
+
     # A column might be an actual table column, but it could also be an expression,
     # SQL literal, subquery, etc.
     _doColumnAtom: (atom) ->

@@ -82,15 +82,43 @@ bulk = {
             .addColumns(tempTableColumns)
             .primaryKey(columns: _.pluck(key.columns, 'name'), isClustered: true)
 
-        @lines[@idx++] = @createTempTable(tempTable)
-        @lines[@idx++] = @_firstInsertLine(tempTable)
+        @addLine(@createTempTable(tempTable))
+        @addLine(@_firstInsertLine(tempTable))
 
         for r in rows
-           @lines[@idx++] = @_insertValues(tempTable, r)
+           @addLine(@_insertValues(tempTable, r))
 
         n = @idx-1
-        @lines[n] = @lines[n].slice(0, -1) + ';'
-        return @lines.join('\n')
+        @lines[n] = @lines[n].slice(0, -1) + ';\n'
+
+        @addLine(@doTableMerge(@table, tempTable))
+
+    addLine: (l) -> @lines[@idx++] = l
+
+    doTableMerge: (target, source) ->
+        t = (c) => "target." + @delimit(c.name)
+        s = (c) => "source." + @delimit(c.name)
+        eq = (c) =>
+            lhs = t(c)
+            rhs = if c.isNullable then "COALESCE(#{s(c)}, #{t(c)})" else s(c)
+            return lhs + " = " + rhs
+
+        onClauses = (eq(c) for c in source.pk.columns).join(" AND ")
+        updates = (eq(c) for c in source.columns when !c.isPartOfKey).join(", ")
+        insertValues = (s(c) for c in source.columns).join(", ")
+
+        a = [
+            "MERGE #{@delimit(target.name)} as target",
+            "USING #{@delimit(source.name)} as source"
+            "ON (#{onClauses})"
+            "WHEN MATCHED THEN"
+            "  UPDATE SET #{updates}"
+            "WHEN NOT MATCHED THEN"
+            "  INSERT (#{@doNameList(source.columns)})"
+            "  VALUES (#{insertValues});"
+        ]
+
+        return a.join('\n')
 
     _firstInsertLine: (table) ->
         columns = _.pluck(table.columns, 'property').join(',')

@@ -22,7 +22,7 @@ schema = {
             # name must still be unique across sessions, and you can imagine how this
             # will blow up in people's faces.
             cluster = if pk.isClustered then 'CLUSTERED ' else ''
-            key = "PRIMARY KEY #{cluster} (#{_.pluck(pk.columns, 'name')})"
+            key = "  PRIMARY KEY #{cluster}(#{@doNameList(pk.columns)})"
             lines[i++] = key
         else
             lines[i-1] = lines[i-1].slice(0, -1)
@@ -30,7 +30,7 @@ schema = {
 
         # FKs in temp tables don't make sense, and are disallowed by most RDMBs afaik,
         # so let's not do them
-        lines[i++] = ")"
+        lines[i++] = ");\n"
 
         return lines.join('\n')
 
