@@ -47,7 +47,6 @@ bulk = {
 
     _addBulkMerges: (keyName, rows) ->
         return if _.isEmpty(rows)
-        idxCreateTempTable = @idx++
         key = @table.db.constraintsByName[keyName]
 
         cntValuesByColumn = {}
@@ -92,6 +91,7 @@ bulk = {
         @lines[n] = @lines[n].slice(0, -1) + ';\n'
 
         @addLine(@doTableMerge(@table, tempTable))
+        @addLine("DROP TABLE " + @delimit(tempTableName) + ";")
 
     addLine: (l) -> @lines[@idx++] = l
 
