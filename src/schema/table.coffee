@@ -17,18 +17,19 @@ class Table extends DbObject
         @hasMany = []
         @belongsTo = []
 
-        @many = @one = @name
+        @many ?= @name
+        @one ?= @name
 
     sqlAlias: () -> @many
 
-    column: (meta) ->
-        @addColumns(meta)
-        return _.last(columns)
+    column: (meta) -> @addColumns(meta)
+
+    primaryKey: (meta) ->
+        o = { name: "PK_" + @name, type: 'PRIMARY KEY' }
+        return @addKeys(_.extend(o, meta))
 
     addColumns: () ->
-        for a in arguments
-            continue if a.table == @
-
+        for a in _.flatten(arguments)
             column = dbObjects.column(a)
             if column.name of @columnsByName
                 throw new Error("addColumns: #{@} already has a column named #{column.name}")
@@ -40,13 +41,20 @@ class Table extends DbObject
         return @
 
     addKeys: () ->
-        for k in arguments
+        for k in _.flatten(arguments)
             key = dbObjects.key(k)
-            continue if key.table == @
+
+            if key.isClustered
+                cluster = _.find(@keys, (k) -> k.isClustered)
+                if cluster?
+                    e = "addKeys: cannot add #{key} because #{@} is already clustered by " +
+                        "#{cluster}. Tables can have only one clustered key." +
+                        "See http://en.wikipedia.org/wiki/Database_index#Clustered"
+                    throw new Error(e)
 
             if key.isPK
                 if @pk?
-                    e = "#{key} is a primary key, but #{@} already has PK #{@pk}"
+                    e = "addKeys: cannot add #{key} because #{@} already has PK #{@pk}"
                     throw new Error(e)
                 else
                     @pk = key
@@ -57,9 +65,8 @@ class Table extends DbObject
         return @
 
     addForeignKeys: () ->
-        for a in arguments
+        for a in _.flatten(arguments)
             fk = dbObjects.foreignKey(a)
-            continue if fk.table == @
             fk.attach(@)
             @foreignKeys.push(fk)
 

@@ -53,7 +53,7 @@ class DbSchema extends DbObject
 
         for kc in dataDictionary.keyColumns
             c = @constraintsByName[kc.constraintName]
-            c.addColumn(kc)
+            c.addColumns(kc)
 
         return @
 

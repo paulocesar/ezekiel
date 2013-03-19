@@ -97,7 +97,7 @@ class Column extends DbObject
         @isPartOfKey = false
         @isReadOnly = @isIdentity || @isComputed
         @isRequired = !@isNullable
-        @property = @name
+        @property ?= @name
 
     canInsert: (v) -> !@getInsertError(v, false)
 
@@ -127,32 +127,38 @@ class Column extends DbObject
 class Constraint extends DbObject
     @types = ['PRIMARY KEY', 'UNIQUE', 'FOREIGN KEY']
 
-    constructor: (schema) ->
-        _.defaults(@, schema)
-        @columns = []
+    constructor: (meta) ->
+        super(meta)
+        @columns ?= []
         @isKey = @type != 'FOREIGN KEY'
 
-    addColumn: (meta) ->
+    addColumns: () ->
         unless @table?
             throw new Error("addColumns: you must attach #{@} to a table before adding columns")
 
-        name = if _.isString(meta) then meta else meta.columnName ? meta.name
-        unless name?
-            throw new Error("addColumns: you must provide a column name")
+        for meta in _.flatten(arguments)
+            name = if _.isString(meta) then meta else meta.columnName ? meta.name
+            unless name?
+                throw new Error("addColumns: you must provide a column name")
 
-        col = @table.columnsByName[name]
-        unless col?
-            throw new Error("addColumns: could not find column #{name} in #{@table}")
+            col = @table.columnsByName[name]
+            unless col?
+                throw new Error("addColumns: could not find column #{name} in #{@table}")
 
-        col.isPartOfKey = true if @isKey
-        @pushEnforcingPosition(@columns, col, meta.position)
+            col.isPartOfKey = true if @isKey
+
+            @pushEnforcingPosition(@columns, col, meta.position)
+
         @isComposite = @columns.length > 1
 
     attach: (table) ->
         super(table)
-        @table.db?.addConstraints(@)
 
-    toString: () -> super.toString() + ", type=#{@type}"
+        oldColumns = @columns
+        @columns = []
+        @addColumns(oldColumns)
+
+        @table.db?.addConstraints(@)
 
 # Stolen friends and disease
 # Operator, please

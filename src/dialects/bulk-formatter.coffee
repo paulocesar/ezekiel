@@ -2,14 +2,15 @@ _ = require('more-underscore/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')
+schemer = require('../schema')
 
 bulk = {
     merge: (merge) ->
         unless merge?.targetTable?
             throw new Error('merge: you must provide a targetTable')
 
-        rows = merge?.rows
-        unless rows? && _.isArray(rows) && !_.isEmpty(rows)
+        rows = merge.rows
+        unless _.isArray(rows) && !_.isEmpty(rows)
             throw new Error('merge: you must provide a non-empty array of rows to be merged')
 
         target = @tokenizeTable(merge.targetTable)
@@ -21,32 +22,32 @@ bulk = {
         o = @table.classifyRowsForMerging(rows)
         @idx = 0
         size = o.cntRows + 16
-        lines = Array(size)
-        cleanup = []
-        @_addBulkInserts(o.inserts, lines, cleanup)
+        @lines = Array(size)
+        @cleanup = []
+        @_addBulkInserts(o.inserts)
         for keyName, rows of o.updatesByKey
-            @_addBulkUpdates(keyName, rows, lines, cleanup)
+            @_addBulkUpdates(keyName, rows)
 
         for keyName, rows of o.mergesByKey
-            @_addBulkMerges(keyName, rows, lines, cleanup)
+            @_addBulkMerges(keyName, rows)
 
-        for c in cleanup
-            lines[@idx++] = c
+        for c in @cleanup
+            @lines[@idx++] = c
 
-        lines.length = @idx
-        return lines.join('\n')
+        @lines.length = @idx
+        return @lines.join('\n')
 
-    _addBulkInserts: (rows, lines, cleanup) ->
+    _addBulkInserts: (rows) ->
         return if _.isEmpty(rows)
         # MUST: implement
 
-    _addBulkUpdates: (keyName, rows, lines, cleanup) ->
+    _addBulkUpdates: (keyName, rows) ->
         return if _.isEmpty(rows)
         # MUST: implement
 
-    _addBulkMerges: (keyName, rows, lines, cleanup) ->
+    _addBulkMerges: (keyName, rows) ->
         return if _.isEmpty(rows)
-        idxCreateTempTable = @i++
+        idxCreateTempTable = @idx++
         key = @table.db.constraintsByName[keyName]
 
         cntValuesByColumn = {}
@@ -57,12 +58,11 @@ bulk = {
                 continue
 
             columns.push(c)
-            cntValuesByColumn[c.name] = 0
-
-        tempName = @nameTempTable('BulkMerge')
+            cntValuesByColumn[c.property] = 0
 
         for r in rows
-           lines[@idx++] = @_doInsert(tempName, key, r, columns, cntValuesByColumn)
+            for c in columns
+                cntValuesByColumn[c.property]++ if c.property of r
 
         tempTableColumns = []
         for c in columns
@@ -71,27 +71,38 @@ bulk = {
 
             nullable = cntValues < rows.length
             tempColumn = {
-                name: c.name, isNullable: nullable, dbDataType: c.dbDataType,
-                maxLength: c.maxLength
+                name: c.name, property: c.property, isNullable: nullable,
+                dbDataType: c.dbDataType, maxLength: c.maxLength
             }
             tempTableColumns.push(tempColumn)
 
+        tempTableName = @nameTempTable('BulkMerge')
 
+        tempTable = schemer.table(name: tempTableName)
+            .addColumns(tempTableColumns)
+            .primaryKey(columns: _.pluck(key.columns, 'name'), isClustered: true)
 
+        @lines[@idx++] = @createTempTable(tempTable)
+        @lines[@idx++] = @_firstInsertLine(tempTable)
 
+        for r in rows
+           @lines[@idx++] = @_insertValues(tempTable, r)
 
-    _doInsert: (tempName, key, row, columns, cntValuesByColumn) ->
-        names = []
-        values = []
-        for c in @table.columns
+        n = @idx-1
+        @lines[n] = @lines[n].slice(0, -1) + ';'
+        return @lines.join('\n')
+
+    _firstInsertLine: (table) ->
+        columns = _.pluck(table.columns, 'property').join(',')
+        "INSERT #{@delimit(table.name)} (#{columns}) VALUES"
+
+    _insertValues: (table, row) ->
+        values = Array(table.columns.length)
+        for c, i in table.columns
             v = row[c.property]
-            continue unless v?
+            values[i] = if v? then @f(v) else 'NULL'
 
-            names.push(@delimit(c.name))
-            values.push(@f(v))
-            cntValuesByColumn[c.name]++
-
-        return "INSERT #{tempName} (#{names.join(',')}) VALUES (#{values.join(',')})"
+        return "(#{values.join(',')}),"
 }
 
 _.extend(SqlFormatter.prototype, bulk)
