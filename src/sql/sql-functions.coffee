@@ -1,4 +1,4 @@
-_ = require("more-underscore/src")
+_ = require("underscore")
 { FunctionCall } = sql = require('./index')
 
 addFunctions = (names...) ->

@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 
 dbObjects = require('../schema')
 { DbSchema } = dbObjects
@@ -116,7 +117,7 @@ class Database
                 msgPassActiveRecordType
             throw new Error(e)
 
-        many = _.firstOrSelf(many)
+        many = F.firstOrSelf(many)
         unless _.isString(many)
             e = "_tableGwFromQuery: #{query} has #{many} as its first table, which is not a " +
                 "string, so I don't know which table it is. " + msgPassActiveRecordType

@@ -1,5 +1,5 @@
 tds = require('tds')
-_ = require('more-underscore/src')
+_ = require('underscore')
 poolModule = require('generic-pool')
 
 class TdsAdapter

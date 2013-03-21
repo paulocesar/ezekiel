@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')
@@ -23,16 +23,13 @@ bulk = {
         @idx = 0
         size = o.cntRows + 16
         @lines = Array(size)
-        @cleanup = []
         @_addBulkInserts(o.inserts)
+
         for keyName, rows of o.updatesByKey
             @_addBulkUpdates(keyName, rows)
 
         for keyName, rows of o.mergesByKey
             @_addBulkMerges(keyName, rows)
-
-        for c in @cleanup
-            @lines[@idx++] = c
 
         @lines.length = @idx
         return @lines.join('\n')

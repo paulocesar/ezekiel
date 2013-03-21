@@ -5,12 +5,15 @@
     "private": false,
     "dependencies": {
         "tds": "git://github.com/cretz/node-tds.git",
-        "more-underscore": "git://github.com/gduarte/more-underscore.git",
-        "mocha": "",
+        "functoids": "git://github.com/gduarte/functoids.git",
+        "underscore": "",
         "coffee-script": "",
-        "should": "",
         "async": "",
         "generic-pool": "",
         "tedious": ""
+    },
+    "devDependencies": {
+        "mocha": "",
+        "should": ""
     }
 }

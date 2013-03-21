@@ -1,4 +1,5 @@
-_ = require("more-underscore/src")
+_ = require("underscore")
+F = require('functoids/src')
 { SqlPredicate, SqlStatement } = sql = require('./index')
 
 class SqlFilteredStatement extends SqlStatement
@@ -29,7 +30,7 @@ output = (columns) ->
 
         throw new Error(e)
 
-    @outputColumns = _.unwrapArgs(arguments)
+    @outputColumns = F.unwrapArgs(arguments)
     return @
 
 module.exports = {

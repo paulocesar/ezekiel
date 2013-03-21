@@ -1,4 +1,4 @@
-_ = require("more-underscore/src")
+_ = require("underscore")
 { BinaryOp, NaryOp } = sql = require('./index')
 
 newBinaryOp = (name) ->

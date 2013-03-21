@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 
 sql = {
     verbatim: (s) -> new SqlVerbatim(s)
@@ -142,7 +143,7 @@ class SqlPredicate extends SqlToken
         if (terms.length? > 1)
             @expr = sql.and(terms...)
         else
-            @expr = SqlPredicate.wrap(_.firstOrSelf(terms))
+            @expr = SqlPredicate.wrap(F.firstOrSelf(terms))
 
     append: (terms, connector) ->
         if !(@expr instanceof connector)

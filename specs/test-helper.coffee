@@ -1,6 +1,7 @@
 util = require('util')
 path = require('path')
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 async = require('async')
 
 testConfig = require('./config.json')
@@ -87,10 +88,10 @@ newCookedSchema = () ->
 
 cookSchema = (s) ->
     for t in s.tables
-       t.one = _.chain(t.name).toSingular().toLowerInitial().value()
-       t.many = _.chain(t.name).toPlural().toLowerInitial().value()
+       t.one = F.toLowerInitial(F.toSingular(t.name))
+       t.many = F.toLowerInitial(F.toPlural(t.name))
        for c in t.columns
-           c.property = _.toLowerInitial(c.name)
+           c.property = F.toLowerInitial(c.name)
 
     return s.finish()
 
@@ -122,5 +123,6 @@ module.exports = {
     aliasedDb,
 
     _,
-    async
+    async,
+    F
 }

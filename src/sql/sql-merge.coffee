@@ -1,4 +1,4 @@
-_ = require("more-underscore/src")
+_ = require("underscore")
 { SqlStatement } = sql = require('./index')
 shared = require('./shared')
 

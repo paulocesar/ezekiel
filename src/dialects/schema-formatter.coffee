@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')

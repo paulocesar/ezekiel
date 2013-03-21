@@ -1,4 +1,5 @@
-U = _ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 
@@ -42,18 +43,18 @@ class SqlFormatter
     parens: (contents) -> "(#{contents.toSql(@)})"
 
     and: (terms) ->
-        t = U.map(terms, @f, @)
+        t = _.map(terms, @f, @)
         return "(#{t.join(" AND " )})"
 
     or: (terms) ->
-        t = U.map(terms, @f, @)
+        t = _.map(terms, @f, @)
         return "(#{t.join(" OR " )})"
 
     rawName: (n) -> @fullNameFromString(n.name).toSql(@)
 
     fullName: (m) -> @joinNameParts(m.parts)
 
-    joinNameParts: (names) -> U.map(names, (p) -> "[#{p}]").join(".")
+    joinNameParts: (names) -> _.map(names, (p) -> "[#{p}]").join(".")
 
     fullNameFromString: (s) ->
         parts = []
@@ -93,19 +94,19 @@ class SqlFormatter
             return @f(tableToken) + '.*'
 
     doAliasedColumn: (c) ->
-        atom = _.firstOrSelf(c)
-        alias = _.secondOrNull(c)
+        atom = F.firstOrSelf(c)
+        alias = F.secondOrNull(c)
         t = @tokenizeColumn(atom)
         return @doAliasedToken(t, alias)
 
     doOutputColumn: (output, defaultPrefix) ->
-        atom = _.firstOrSelf(output)
+        atom = F.firstOrSelf(output)
         t = @tokenizeColumn(atom, @findOutputColumnSchema)
 
         if atom != t && t instanceof SqlFullName
             t.setDefaultPrefix(defaultPrefix)
 
-        alias = _.secondOrNull(output)
+        alias = F.secondOrNull(output)
         return @doAliasedToken(t, alias)
 
     doNameList: (names, separator = ', ') ->
@@ -180,7 +181,7 @@ class SqlFormatter
         t = @tokenizeRhs(rhs)
 
         if sql.isLiteral(t)
-            p = _.undelimit(@f(rhs), "''")
+            p = F.undelimit(@f(rhs), "''")
             p = @_escapePatternMetaChars(p)
             return "'#{prologue}#{p}#{epilogue}'"
         else
@@ -426,8 +427,8 @@ class SqlFormatter
     orderBy: (c) -> @doList(c.orderings, @ordering, ', ', ' ORDER BY ')
 
     ordering: (o) ->
-        s = @_doColumnAtom(_.firstOrSelf(o))
-        dir = if _.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
+        s = @_doColumnAtom(F.firstOrSelf(o))
+        dir = if F.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
 
         "#{s} #{dir}"
 

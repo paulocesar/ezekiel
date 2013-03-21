@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 
 class DbObject
     constructor: (meta) ->
@@ -120,7 +121,7 @@ class Column extends DbObject
 
         return "Cannot write value #{v} into #{@}: #{e}."
 
-    isFullPrimaryKey: () -> _.isOnlyElement(@table.pk?.columns, @)
+    isFullPrimaryKey: () -> F.isOnlyElement(@table.pk?.columns, @)
     matchesType: (v) -> @jsType.matchesType(v)
     sqlAlias: () -> @property
 
@@ -176,7 +177,7 @@ class Key extends Constraint
     contains: (column) -> _.contains(@columns, column)
 
     matchesShape: () ->
-        keyValues = _.unwrapArgs(arguments)
+        keyValues = F.unwrapArgs(arguments)
 
         unless keyValues?
             e = "You must provide key values to see if their shape matches key #{@}"
@@ -194,7 +195,7 @@ class Key extends Constraint
         return true
 
     wrapValues: () ->
-        keyValues = _.unwrapArgs(arguments)
+        keyValues = F.unwrapArgs(arguments)
 
         unless keyValues?
             e = "You must provide the key values corresponding to the columns in #{@}"
@@ -206,7 +207,7 @@ class Key extends Constraint
 
         o = {}
         for c, i in @columns
-            v = if i == 0 then _.firstOrSelf(keyValues) else keyValues[i]
+            v = if i == 0 then F.firstOrSelf(keyValues) else keyValues[i]
             o[c.property] = v
 
         return o

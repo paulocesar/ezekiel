@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
 
 boundFunctions = {
     scalar: (cb) -> @db.scalar(@, cb)

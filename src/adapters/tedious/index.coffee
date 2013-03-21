@@ -2,7 +2,7 @@ tedious = require('tedious')
 
 { Connection, Request } = tedious
 
-_ = require('more-underscore/src')
+_ = require('underscore')
 poolModule = require('generic-pool')
 
 class TediousAdapter

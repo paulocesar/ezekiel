@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 { DbObject, Column } = dbObjects = require('./index')
 
 class Table extends DbObject
@@ -97,7 +98,7 @@ class Table extends DbObject
         return @
 
     getKeysWithShape: () ->
-        values = _.unwrapArgs(arguments)
+        values = F.unwrapArgs(arguments)
         unless values?
             e = "getKeysWithShape: No arguments given. You must provide values to specify " +
                 "the key shape you seek. " +

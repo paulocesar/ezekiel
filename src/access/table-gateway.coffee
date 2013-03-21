@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 
 { SqlToken } = sql = require('../sql')
 queryBinder = require('./query-binder')
@@ -21,8 +22,8 @@ class TableGateway
         return @db.bindOrCall(s, 'noData', cb)
 
     doOne: (fn, args, opName, queryArgument = null) ->
-        cb = _.lastIfFunction(args)
-        keyValues = _.unwrapArgs(args, cb?)
+        cb = F.lastIfFunction(args)
+        keyValues = F.unwrapArgs(args, cb?)
 
         unless keyValues?
             throw new Error('doOne: You must provide key values as arguments to #{opName}One()')
@@ -70,7 +71,7 @@ class TableGateway
                 "values to be updated in #{@schema}"
             throw new Error(e)
 
-        cb = _.lastIfFunction(args)
+        cb = F.lastIfFunction(args)
         cntKeyValues = if cb? then args.length - 1 else args.length
         if (cntKeyValues > 0)
             return @doOne(@_update, args, 'update', updateValues)

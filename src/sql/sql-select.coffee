@@ -1,10 +1,11 @@
-_ = require("more-underscore/src")
+_ = require("underscore")
+F = require('functoids/src')
 { SqlPredicate, SqlRawName, SqlStatement, SqlToken } = sql = require('./index')
 
 class SqlAliasedExpression extends SqlToken
     constructor: (a) ->
-        @atom = _.firstOrSelf(a)
-        @alias = _.secondOrNull(a)
+        @atom = F.firstOrSelf(a)
+        @alias = F.secondOrNull(a)
 
         # This is only used by formatters, users don't have to worry about it
         @_schema = null

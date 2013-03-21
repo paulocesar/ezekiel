@@ -1,4 +1,4 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
 
 engines = require('./engines.json')
 Database = require('./access/database')

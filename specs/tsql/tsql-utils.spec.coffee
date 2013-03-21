@@ -1,5 +1,5 @@
 should = require('should')
-_ = require('more-underscore/src')
+_ = require('underscore')
 h = require('../test-helper')
 
 utils = null

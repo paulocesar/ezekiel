@@ -1,4 +1,5 @@
-_ = require('more-underscore/src')
+_ = require('underscore')
+F = require('functoids/src')
 { DbObject, Table, Column, Key, ForeignKey } = dbObjects = require('./index')
 
 class DbSchema extends DbObject
@@ -69,7 +70,7 @@ class DbSchema extends DbObject
             singular = property.slice(0, -1)
             child = dbObjects[singular](i)
 
-            addFnName = 'add' + _.toUpperInitial(property)
+            addFnName = 'add' + F.toUpperInitial(property)
             table[addFnName](child)
 
     table: (schema) ->
