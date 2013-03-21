@@ -14,7 +14,7 @@ class TableGateway
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
     _find: (predicate, cb) ->
-        q = sql.from(@sqlAlias()).where(predicate)
+        q = @newQuery().where(predicate)
         return @db.bindOrCall(q, 'oneObject', cb)
 
     _delete: (predicate, cb) ->
@@ -92,12 +92,31 @@ class TableGateway
         return @db.bindOrCall(s, 'noData', cb)
 
     selectMany: (predicate, cb) ->
-        q = sql.from(@sqlAlias()).where(predicate)
+        q = @newQuery().where(predicate)
         return @db.bindOrCall(q, 'allObjects', cb)
 
+    deleteMany: (predicate, cb) ->
+        s = sql.delete(@sqlAlias()).where(predicate)
+        return @db.bindOrCall(s, 'noData', cb)
+
     count: (cb = null) ->
-        q = sql.from(@sqlAlias()).select(sql.count(1))
+        q = @newQuery().select(sql.count(1))
         return @db.bindOrCall(q, 'scalar', cb)
+
+    all: (cb) ->
+        q = @newQuery()
+        return @db.bindOrCall(q, 'allObjects', cb)
+
+    newQuery: () -> sql.from(@sqlAlias())
+
+    merge: (data, cb) ->
+        unless _.isArray(data)
+            throw new Error("You must pass an array of rows to be merged")
+
+        cb(null) if _.isEmpty(data)
+
+        s = sql.merge(@sqlAlias()).using(data)
+        return @db.bindOrCall(s, 'noData', cb)
 
     bindError: (msg, cb) ->
         return cb(msg) if cb?

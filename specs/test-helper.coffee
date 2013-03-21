@@ -2,7 +2,7 @@ util = require('util')
 path = require('path')
 _ = require('underscore')
 F = require('functoids/src')
-async = require('async')
+A = async = require('async')
 
 testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
@@ -122,7 +122,9 @@ module.exports = {
     schemaDb
     aliasedDb,
 
-    _,
-    async,
+    # useful modules: Underscore, async, functoids
+    _
+    async
+    A
     F
 }
