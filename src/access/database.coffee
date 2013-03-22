@@ -21,7 +21,6 @@ newActiveRecord = (proto, tableGateway) ->
     
 # MUST: take schema as config object or never again. Ezekiel will take care of reading schema files
 # or loading meta data from the database.
-#
 class Database
     constructor: (@config = {}) ->
         @schema = @config.schema ? null
@@ -51,12 +50,10 @@ class Database
         proto = @[propertyName][key]
         return proto if proto?
 
-        e = "getProtoOrThrow: Could not find an entry in #{propertyName} for #{key}. Make sure " +
-            "you have loaded a schema into this database instance and check spelling and " +
-            "capitalization. You can inspect the #{propertyName} property to see the available " +
-            "prototypes. Good luck."
-
-        throw new Error(e)
+        F.throw("Could not find an entry in #{propertyName} for #{key}. Make sure"
+            "you have loaded a schema into this database instance and check spelling and"
+            "capitalization. You can inspect the #{propertyName} property to see the available"
+            "prototypes. Good luck.")
 
     newContext: (context) ->
         newDb = Object.create(@)
@@ -89,7 +86,7 @@ class Database
             proto = @getProtoOrThrow('activeRecordPrototypes', one)
             gw = @getTableGateway(proto.schema.many)
         else
-            gw = @_tableGwFromQuery(query)
+            gw = @_tableGatewayFromQuery(query)
             proto = @getProtoOrThrow('activeRecordPrototypes', gw.schema.one)
 
         return (err, data) ->
@@ -104,23 +101,19 @@ class Database
 
             cb(null, result)
 
-    _tableGwFromQuery: (query) ->
+    _tableGatewayFromQuery: (query) ->
         unless query instanceof SqlSelect
-            e = "_tableGwFromQuery: Cannot find source table for query '#{query}' " +
-                "because it is not an instance of SqlSelect. " + msgPassActiveRecordType
-                
-            throw new Error(e)
+            F.throw("Cannot find source table for query '#{query}'"
+                "because it is not an instance of SqlSelect.", msgPassActiveRecordType)
 
         many = query.tables[0]
         unless many?
-            e = "_tableGwFromQuery: #{query} does not have any source tables. " +
-                msgPassActiveRecordType
-            throw new Error(e)
+            F.throw("#{query} does not have any source tables.", msgPassActiveRecordType)
 
         many = F.firstOrSelf(many)
         unless _.isString(many)
-            e = "_tableGwFromQuery: #{query} has #{many} as its first table, which is not a " +
-                "string, so I don't know which table it is. " + msgPassActiveRecordType
+            F.throw("#{query} has #{many} as its first table, which is not a"
+                "string, so I don't know which object type you want.", msgPassActiveRecordType)
 
         gw = @getTableGateway(many)
         return gw

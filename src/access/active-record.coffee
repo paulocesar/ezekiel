@@ -44,8 +44,7 @@ class ActiveRecordState
       @changed[key] = value
 
     demandStateFor: (op, s) ->
-      e = "Cannot do operation #{op} in state #{@name()}. State must be #{s}"
-      throw new Error(e)
+      F.throw("Cannot do operation #{op} in state #{@name()}. State must be #{s}")
 
     makePersistHandler: (cb) ->
         (err, outputValues) =>

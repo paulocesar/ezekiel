@@ -24,8 +24,7 @@ class DbSchema extends DbObject
 
     assertUniqHandle: (t, key, store) ->
         return unless key of store
-        e = "Tables #{t} and #{store[key]} have the same handle of #{key}"
-        throw new Error(e)
+        F.throw("Tables #{t} and #{store[key]} have the same handle of #{key}")
 
     addTables: () ->
         for a in arguments
@@ -33,7 +32,7 @@ class DbSchema extends DbObject
 
             table = dbObjects.table(a)
             if table.name of @tablesByName
-                throw new Error("#{@} already has a table named #{table.name}")
+                F.throw("#{@} already has a table named #{table.name}")
 
             @tables.push(table)
             @tablesByName[table.name] = table

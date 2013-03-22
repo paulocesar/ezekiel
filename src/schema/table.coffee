@@ -33,7 +33,7 @@ class Table extends DbObject
         for a in _.flatten(arguments)
             column = dbObjects.column(a)
             if column.name of @columnsByName
-                throw new Error("addColumns: #{@} already has a column named #{column.name}")
+                F.throw("#{@} already has a column named #{column.name}")
 
             column.attach(@)
             @pushEnforcingPosition(@columns, column)
@@ -48,15 +48,13 @@ class Table extends DbObject
             if key.isClustered
                 cluster = _.find(@keys, (k) -> k.isClustered)
                 if cluster?
-                    e = "addKeys: cannot add #{key} because #{@} is already clustered by " +
-                        "#{cluster}. Tables can have only one clustered key." +
-                        "See http://en.wikipedia.org/wiki/Database_index#Clustered"
-                    throw new Error(e)
+                    F.throw("Cannot add #{key} because #{@} is already clustered by"
+                        "#{cluster}. Tables can have only one clustered key."
+                        "See http://en.wikipedia.org/wiki/Database_index#Clustered")
 
             if key.isPK
                 if @pk?
-                    e = "addKeys: cannot add #{key} because #{@} already has PK #{@pk}"
-                    throw new Error(e)
+                    F.throw("Cannot add #{key} because #{@} already has PK #{@pk}")
                 else
                     @pk = key
 
@@ -75,10 +73,10 @@ class Table extends DbObject
 
     attach: (db) ->
         if @db?
-            throw new Error("attach: #{@} is already attached to #{@db}")
+            F.throw("#{@} is already attached to #{@db}")
       
         unless db?
-            throw new Error('attach: you must provide a DbSchema instance')
+            F.throw('You must provide a DbSchema instance')
 
         @db = db
 
@@ -100,10 +98,8 @@ class Table extends DbObject
     getKeysWithShape: () ->
         values = F.unwrapArgs(arguments)
         unless values?
-            e = "getKeysWithShape: No arguments given. You must provide values to specify " +
-                "the key shape you seek. " +
-                "Examples: getKeysWithShape(20), getKeysWithShape('foo', 'bar'), etc."
-            throw new Error(e)
+            F.throw("No arguments given. You must provide values to specify the key shape you"
+            "seek. Examples: getKeysWithShape(20), getKeysWithShape('foo', 'bar'), etc.")
 
         return (k for k in @keys when k.matchesShape(values))
 
@@ -242,8 +238,7 @@ class Table extends DbObject
             return if k2.isComposite then k1 else k2
 
     classifyRowsForMerging: (rows) ->
-        unless _.isArray(rows)
-            throw new Error('classifyRowsForMerging: you must provide an array of rows')
+        F.demandArray(rows, 'rows')
 
         cntRows = 0
         inserts = []
@@ -260,7 +255,7 @@ class Table extends DbObject
 
             unless canInsert || canUpdate
                 errors = @getMergeErrors(r).join(' ')
-                throw new Error("classifyRowsForMerging: Cannot merge row #{r}: #{errors}")
+                F.throw("Cannot merge row #{r}: #{errors}")
 
             key = @getBestKeyForMerging(r)
 
@@ -272,7 +267,7 @@ class Table extends DbObject
             else if canInsert
                 target = inserts
             else
-                throw new Error( "classifyRowsForMerging: bug triggered by row #{r}")
+                F.throw("Bug triggered by row #{r}")
 
             cntRows++
             target.push(r)

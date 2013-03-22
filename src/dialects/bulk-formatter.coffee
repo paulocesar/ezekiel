@@ -1,4 +1,5 @@
 _ = require('underscore')
+F = require('functoids/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')
@@ -7,11 +8,10 @@ schemer = require('../schema')
 bulk = {
     merge: (merge) ->
         unless merge?.targetTable?
-            throw new Error('merge: you must provide a targetTable')
+            throw new Error('you must provide a targetTable')
 
         rows = merge.rows
-        unless _.isArray(rows) && !_.isEmpty(rows)
-            throw new Error('merge: you must provide a non-empty array of rows to be merged')
+        F.demandNonEmptyArray(rows, 'merge.rows')
 
         target = @tokenizeTable(merge.targetTable)
         @table = target._schema

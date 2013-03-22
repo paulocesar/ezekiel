@@ -198,12 +198,10 @@ class Key extends Constraint
         keyValues = F.unwrapArgs(arguments)
 
         unless keyValues?
-            e = "You must provide the key values corresponding to the columns in #{@}"
-            throw new Error(e)
+            F.throw("You must provide the key values corresponding to the columns in #{@}")
 
         unless @matchesShape(keyValues)
-            e = "The key values provided (#{keyValues}) do not match the shape of #{@}"
-            throw new Error(e)
+            F.throw("The key values provided (#{keyValues}) do not match the shape of #{@}")
 
         o = {}
         for c, i in @columns
@@ -221,13 +219,11 @@ class ForeignKey extends Constraint
     finish: () ->
         db = @table.db
         unless db?
-            e = "You must attach #{@table} to a database before finishing a ForeignKey"
-            throw new Error(e)
+            F.throw("You must attach #{@table} to a database before finishing a ForeignKey")
 
         @parentKey = db.constraintsByName[@parentKeyName]
         unless @parentKey?
-            e = "Could not find parent key #{@parentKeyName} for #{@} in #{db}"
-            throw new Error(e)
+            F.throw("Could not find parent key #{@parentKeyName} for #{@} in #{db}")
 
         @parentTable = @parentKey.table
         @parentTable.incomingFKs.push(@)

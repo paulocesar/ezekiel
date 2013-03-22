@@ -21,38 +21,38 @@ class TableGateway
         s = sql.delete(@sqlAlias(), predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
-    doOne: (fn, args, opName, queryArgument = null) ->
+    doOne: (fn, args, opName, queryArgument) ->
         cb = F.lastIfFunction(args)
         keyValues = F.unwrapArgs(args, cb?)
 
         unless keyValues?
-            throw new Error('doOne: You must provide key values as arguments to #{opName}One()')
+            F.throw('You must provide key values as arguments to #{opName}One()')
 
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered
                 return fn.call(@, keyValues, cb, queryArgument)
             else
-                e = "doOne: Could not find a key in #{@schema} whose values are fully specified " +
-                    "in #{keyValues}. If you want to work on multiple rows, please use " +
-                    "#{opName}Many()"
+                e = ["Could not find a key in #{@schema} whose values are fully specified"
+                    "in #{keyValues}. If you want to work on multiple rows, please use"
+                    "#{opName}Many()"].join(' ')
                 return @bindError(e, cb)
 
         keys = @schema.getKeysWithShape(keyValues)
 
         if keys.length == 0
-            e = "doOne: Could not find viable key in #{@schema} to be compared against " +
-                "values #{keyValues}"
+            e = ["Could not find viable key in #{@schema} to be compared against"
+                "values #{keyValues}"].join(' ')
             return @bindError(e, cb)
         else if keys.length > 1
-            e = "doOne: Multiple keys in #{@schema} can be compared against values #{keyValues}"
+            e = "Multiple keys in #{@schema} can be compared against values #{keyValues}"
             return @bindError(e, cb)
 
         predicate = keys[0].wrapValues(keyValues)
         return fn.call(@, predicate, cb, queryArgument)
 
-    insertOne: (values, cb = null) ->
-        throw new Error('insertOne: You must provide a values object') unless values?
+    insertOne: (values, cb) ->
+        F.demandObject(values, 'values')
 
         @schema.demandInsertable(values)
 
@@ -67,9 +67,8 @@ class TableGateway
 
     updateOne: (updateValues, args...) ->
         unless _.isObject(updateValues)
-            e = "updateOne: The first argument to updateOne() must be an object containing the " +
-                "values to be updated in #{@schema}"
-            throw new Error(e)
+            F.throw("The first argument to updateOne() must be an object containing the"
+                "values to be updated in #{@schema}")
 
         cb = F.lastIfFunction(args)
         cntKeyValues = if cb? then args.length - 1 else args.length
@@ -110,9 +109,7 @@ class TableGateway
     newQuery: () -> sql.from(@sqlAlias())
 
     merge: (data, cb) ->
-        unless _.isArray(data)
-            throw new Error("You must pass an array of rows to be merged")
-
+        F.demandArray(data, 'data')
         cb(null) if _.isEmpty(data)
 
         s = sql.merge(@sqlAlias()).using(data)
