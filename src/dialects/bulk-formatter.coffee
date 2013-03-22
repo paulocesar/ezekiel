@@ -62,7 +62,7 @@ bulk = {
 
         tempTableColumns = []
         for c in columns
-            cntValues = cntValuesByColumn[c.name]
+            cntValues = cntValuesByColumn[c.property]
             continue if cntValues == 0
 
             nullable = cntValues < rows.length
