@@ -59,6 +59,8 @@ class TsqlUtils extends DbUtils
             callback(err, null) if err
             for r in rows
                 r.isNullable = r.isNullable == 'YES'
+                if r.maxLength == -1
+                    r.maxLength = 'max'
             callback(null, rows)
         )
 
