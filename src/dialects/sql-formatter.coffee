@@ -28,17 +28,35 @@ class SqlFormatter
         return v.toSql(@) if v instanceof SqlToken
         return @literal(v)
 
-    literal: (l) ->
-        unless l?
+    literal: (v) ->
+        unless v?
             return 'NULL'
 
-        if (_.isString(l))
-            return "'" + l.replace("'","''") + "'"
+        if _.isString(v)
+            return "'" + v.replace("'","''") + "'"
 
-        if (_.isArray(l))
-            return _.map(l, (i) => @literal(i)).join(', ')
+        if _.isArray(v)
+            return _.map(v, (i) => @literal(i)).join(', ')
 
-        return l.toString()
+        if _.isDate(v)
+            return @date(v)
+
+        return v.toString()
+
+    date: (d) ->
+        F.demandDate(d)
+
+        pad = (n) -> F.padLeft(n, 2, '0')
+
+        y = F.padLeft(d.getFullYear(), 4, '0')
+        m = pad(d.getMonth() + 1)
+        day = pad(d.getDate())
+        h = pad(d.getHours())
+        mm = pad(d.getMinutes())
+        s = pad(d.getSeconds())
+        ms = F.padLeft(d.getMilliseconds(), 3, '0')
+
+        return "'#{y}-#{m}-#{day} #{h}:#{mm}:#{s}.#{ms}'"
 
     parens: (contents) -> "(#{contents.toSql(@)})"
 

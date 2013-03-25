@@ -7,6 +7,7 @@ schema = h.getCookedSchema()
 tables = schema.tablesByMany
 fighters = tables.fighters
 
+
 expectedMerge = """
 CREATE TABLE [#BulkMerge] (
   [FirstName] varchar(100) NOT NULL,
@@ -20,10 +21,10 @@ CREATE TABLE [#BulkMerge] (
 );
 
 INSERT [#BulkMerge] (firstName,lastName,dOB,country,heightInCm,reachInCm,weightInLb) VALUES
-('Anderson','Silva','1975-04-14','Brazil',188,197,185),
-('Wanderlei','Silva','1976-07-02','Brazil',180,188,204),
-('Jon','Jones','1987-07-19','USA',193,215,205),
-('Cain','Velasquez','1982-07-28','USA',185,196,240);
+('Anderson','Silva','1975-04-13 18:00:00.000','Brazil',188,197,185),
+('Wanderlei','Silva','1976-07-01 18:00:00.000','Brazil',180,188,204),
+('Jon','Jones','1987-07-18 18:00:00.000','USA',193,215,205),
+('Cain','Velasquez','1982-07-27 18:00:00.000','USA',185,196,240);
 
 MERGE [Fighters] as target
 USING [#BulkMerge] as source
