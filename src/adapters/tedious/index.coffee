@@ -7,14 +7,15 @@ poolModule = require('generic-pool')
 
 class TediousAdapter
     constructor: (config) ->
-        @config = { options: {} }
-        @config.userName = config.userName
-        @config.password = config.password
-        @config.server = config.host
-        @config.options.database = config.database
-        @pooling = config.pooling ? true
 
-        if @pooling
+        @config = _.pick(config, 'userName', 'password', 'pooling')
+        @config.server = config.host
+        @config.pooling ?= true
+
+        @config.options = _.pick(config, 'database', 'port', 'connectTimeout')
+        @config.options.port ?= 1433
+
+        if @config.pooling
             # By default, we use a maximum pool size of 100, equal to the .NET default
             # See http://msdn.microsoft.com/en-us/library/8xx3tyca.aspx
             @pool = poolModule.Pool({
@@ -27,7 +28,7 @@ class TediousAdapter
     _createConnection: (callback) ->
         conn = new Connection(@config)
         conn.on('connect', (err) =>
-            if (err)
+            if err?
                 callback(err)
             else
                 # MUST: find a real solution instead of this godawful workaround
@@ -36,21 +37,21 @@ class TediousAdapter
                         'SET ANSI_NULL_DFLT_ON ON SET CONCAT_NULL_YIELDS_NULL ON'
 
                 request = new Request(set, (err, rowCount) ->
-                    return callback(err) if err
+                    return callback(err) if err?
                     callback(null, conn)
                 )
 
                 conn.execSqlBatch(request)
         )
 
-    connect: (cb) -> if @pooling then @pool.acquire(cb) else @_createConnection(cb)
-    release: (conn) -> if @pooling then @pool.release(conn) else conn.close()
+    connect: (cb) -> if @config.pooling then @pool.acquire(cb) else @_createConnection(cb)
+    release: (conn) -> if @config.pooling then @pool.release(conn) else conn.close()
 
     execute: (options) ->
         fnErr = options.onError ? @onExecuteError
 
         @connect (err, conn) =>
-            if(err)
+            if err?
                 fnErr(err)
                 return
 
@@ -61,7 +62,7 @@ class TediousAdapter
             request = new Request(options.stmt, (err, rowCount) =>
                 @release(conn)
 
-                if (err)
+                if err?
                     fnErr(err)
                     return
 

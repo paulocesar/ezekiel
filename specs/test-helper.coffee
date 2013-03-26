@@ -50,7 +50,6 @@ connectToDb = (cb) ->
         if (err)
             F.throw('Could not connect to DB while testing:', err)
 
-        console.log('here')
         cb(database)
     )
 
