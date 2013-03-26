@@ -66,9 +66,12 @@ class TableGateway
         return @db.bindOrCall(q, fn, cb)
 
     updateOne: (updateValues, args...) ->
-        unless _.isObject(updateValues)
-            F.throw("The first argument to updateOne() must be an object containing the"
-                "values to be updated in #{@schema}")
+        F.demandNonEmptyObject(updateValues, 'updateValues',
+            "be an object containing the values to be updated in #{@schema}")
+
+        if _.isEmpty(updateValues)
+            F.throw("Argument 'updateValues' cannot be null. It ")
+            
 
         cb = F.lastIfFunction(args)
         cntKeyValues = if cb? then args.length - 1 else args.length
