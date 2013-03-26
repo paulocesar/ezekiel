@@ -1,10 +1,12 @@
 h = require('../test-helper')
+require('../live-db')
 async = h.async
 
 fs = require('fs')
 
-env = "development"
 database = null
+before () ->
+  database = h.liveDb
 
 tmpTable = """
 DECLARE @names TABLE(
@@ -20,15 +22,6 @@ INSERT INTO @names VALUES  ('Marsellus','Wallace')
 """
 
 describe('Database', () ->
-    it('should have a configuration object', () ->
-        h.testConfig.databases.should.be.a('object')
-    )
-
-    it('should instantiate the Database class correctly', () ->
-        database = h.getSharedDb()
-        database.should.be.a('object')
-    )
-
     it('should execute a simple query', (done) ->
         query = "SELECT 1"
         database.run(query, (data) ->

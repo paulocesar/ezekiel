@@ -35,7 +35,7 @@ class TediousAdapter
                         'SET ANSI_NULLS ON SET ARITHABORT ON SET QUOTED_IDENTIFIER ON ' +
                         'SET ANSI_NULL_DFLT_ON ON SET CONCAT_NULL_YIELDS_NULL ON'
 
-                request = new Request(set , (err, rowCount) ->
+                request = new Request(set, (err, rowCount) ->
                     return callback(err) if err
                     callback(null, conn)
                 )
@@ -102,11 +102,8 @@ class TediousAdapter
 
     onConnectionMessage: (msg) ->
 
-    onConnectionError: (err) ->
-        throw new Error(err)
-
-    onExecuteError: (err) ->
-        throw new Error(err)
+    onConnectionError: (err) -> throw new Error(err)
+    onExecuteError: (err) -> throw new Error(err)
 
     doesDatabaseExist: (name, callback) ->
         @execute(

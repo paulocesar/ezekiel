@@ -1,8 +1,10 @@
 should = require('should')
 _ = require('underscore')
 h = require('../test-helper')
+require('../live-db')
 
 utils = null
+before () -> utils = h.liveDb.utils
 
 meta = h.getMetaData()
 
@@ -44,10 +46,6 @@ checkKeyColumns = (keyColumns) ->
 
 
 describe('TsqlUtils', () ->
-    before(() ->
-        utils = h.getSharedDb('mssql').utils
-    )
-
     it('should create a date now', (done) ->
         utils.dbNow((err, date) ->
             x = new Date(date)

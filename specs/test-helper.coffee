@@ -15,7 +15,6 @@ Database = requireSrc('access/database')
 DbSchema = requireSrc('schema/db-schema')
 
 debug = false
-sharedDb = null
 defaultEngine = 'mssql'
 
 blankDb = () ->
@@ -51,15 +50,9 @@ connectToDb = (cb) ->
         if (err)
             F.throw('Could not connect to DB while testing:', err)
 
+        console.log('here')
         cb(database)
     )
-
-before((done) ->
-    connectToDb((database) ->
-        sharedDb = database
-        done()
-    )
-)
 
 metaData = null
 getMetaData = () ->
@@ -108,7 +101,6 @@ module.exports = {
 
     dump: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
 
-    getSharedDb: (engine = defaultEngine) -> sharedDb
     connectToDb
 
     getMetaData
