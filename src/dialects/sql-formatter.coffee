@@ -176,6 +176,10 @@ class SqlFormatter
         return pieces.join(' AND ')
 
     binaryOp: (left, op, right) ->
+        F.demandNotNil(left, "left")
+        F.demandNotNil(op, "op")
+        F.demandNotNil(right, "right")
+
         l = @_doColumnAtom(left)
         
         sqlOp = operatorAliases[op] ? op.toUpperCase()

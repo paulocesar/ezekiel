@@ -131,4 +131,9 @@ describe('SqlPredicate', () ->
         exp = "[login] = 'HAX0R ''-- SELECT * FROM users'"
         h.assertSql(p, exp)
 
+    it 'transforms JS null into sql NULL', ->
+        p = sql.predicate( {name: null})
+        exp = "[name] IS NULL"
+        h.assertSql(p, exp)
+
 )

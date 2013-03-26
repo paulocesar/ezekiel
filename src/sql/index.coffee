@@ -39,6 +39,12 @@ class SqlToken
 
     toSql: () -> ''
 
+class SqlNull extends SqlToken
+    toString: () -> '<SqlNull>'
+    toSql: () -> 'NULL'
+
+sqlNull = new SqlNull()
+
 class SqlVerbatim extends SqlToken
     constructor: (@s) ->
     toSql: -> @s
@@ -76,8 +82,13 @@ class FunctionCall extends SqlToken
     constructor: (@name, @args) ->
     toSql: (f) -> f.functionCall(@)
 
+
+
+
 class BinaryOp extends SqlToken
     @push: (left, right, ops = []) ->
+        F.demandNotNil(left, "left")
+
         # where( field: sql.isNull }
         if _.isFunction(right)
             right = right()
@@ -97,6 +108,8 @@ class BinaryOp extends SqlToken
         else if right instanceof NaryOp
             newbie = new NaryOp(right.op, right.atoms.concat(left))
         # where( field: 10 )
+        else if !right?
+            newbie = sql.isNull(left)
         else
             newbie = sql.equals(left, right)
 
@@ -112,6 +125,8 @@ class NaryOp extends SqlToken
 
 class SqlPredicate extends SqlToken
     @wrap: (term) ->
+        F.demandNotNil(term, "term")
+
         if term instanceof SqlToken
             return term
 
@@ -123,6 +138,8 @@ class SqlPredicate extends SqlToken
         if _.isArray(term)
             BinaryOp.push(term[0], term[1], pieces)
         else if _.isObject(term)
+            F.throw("Argument 'term' cannot be an empty object") if _.isEmpty(term)
+
             for k, v of term
                 BinaryOp.push(k, v, pieces)
 
@@ -192,6 +209,8 @@ _.extend(sql, {
     BinaryOp
     NaryOp
     FunctionCall
+    sqlNull
+    null: sqlNull
 })
 
 require('./sql-select')
