@@ -6,32 +6,19 @@ queryBinder = require('./query-binder')
 
 states = [
     {
-        name: 'unknown'
-        insert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
-        update: (cb) -> @_gw.updateOne @_changed, @_makePersistHandler(cb)
-        upsert: (cb) -> @_gw.upsertOne @_changed, @_makePersistHandler(cb)
-        delete: (cb) -> @_gw.deleteOne @_changed, @_makeDeleteHandler(cb)
+        name: 'new'
+        persist: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
+        destroy: (cb) -> @throwBadStateFor('destroy')
     }
     {
         name: 'persisted'
-        insert: (cb) -> @throwBadStateFor('insert')
-        update: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
-        upsert: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
-        delete: (cb) -> @_gw.deleteOne @_persisted, @_makeDeleteHandler(cb)
+        persist: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
+        destroy: (cb) -> @_gw.deleteOne @_persisted, @_makeDestroyHandler(cb)
     }
     {
-        name: 'new'
-        insert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
-        update: (cb) -> @throwBadStateFor('update')
-        upsert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
-        delete: (cb) -> @throwBadStateFor('delete')
-    }
-    {
-        name: 'deleted'
-        insert: (cb) -> @throwBadStateFor('insert')
-        update: (cb) -> @throwBadStateFor('update')
-        upsert: (cb) -> @throwBadStateFor('upsert')
-        delete: (cb) -> @throwBadStateFor('delete')
+        name: 'destroyed'
+        persist: (cb) -> @throwBadStateFor('persist')
+        destroy: (cb) -> @throwBadStateFor('destroy')
     }
 ]
 
@@ -91,21 +78,16 @@ class ActiveRecord
             @_changed = {}
             cb(null, @)
 
-    _makeDeleteHandler: (cb) ->
+    _makeDestroyHandler: (cb) ->
         (err) =>
             return cb(err) if err
-            @_n = 3
+            @_n = 2
             cb()
-
-    setNew: () ->
-        @throwBadStateFor('setNew') if @_n != 0
-        @_n = 2
-        return @
 
     setPersisted: (data) ->
         F.demandNonEmptyObject(data, 'data')
 
-        @throwBadStateFor('setPersisted') if @_n == 3
+        @throwBadStateFor('setPersisted') if @_n == 2
 
         unless @_schema.coversSomeKey(data)
             F.throw("Argument 'data' does not cover any keys in #{@_schema}")
@@ -114,20 +96,18 @@ class ActiveRecord
         @_n = 1
         return @
 
-    _isDirty: () -> @_n in [0,2] || !_.isEmpty(@_changed)
-
-    insert: (cb) -> states[@_n].insert.call(@, cb)
+    _isDirty: () -> @_n == 0 || !_.isEmpty(@_changed)
 
     # SHOULD: consider calling cb in next tick, so that we always look async
     # to the caller
-    update: (cb) ->
+    persist: (cb) ->
         return cb(null, @) unless @_isDirty()
-        states[@_n].update.call(@, cb)
+        states[@_n].persist.call(@, cb)
 
     upsert: (cb) ->
         return cb(null, @) unless @_isDirty()
         states[@_n].upsert.call(@, cb)
 
-    delete: (cb) -> states[@_n].delete.call(@, cb)
+    destroy: (cb) -> states[@_n].destroy.call(@, cb)
 
 module.exports = ActiveRecord

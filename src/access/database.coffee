@@ -11,7 +11,7 @@ queryBinder = require('./query-binder')
 
 msgPassActiveRecordType =
     "If you want objects from a query that lacks source table information, like a raw string " +
-    "or SqlSelect without tables, you must provide the desired object type as  a parameter." +
+    "or SqlSelect without tables, you must provide the desired object type as a parameter. " +
     "For example: db.oneObject('SELECT * FROM customers WHERE Id = 1', 'customer', cb)"
 
 newActiveRecord = (proto, tableGateway) ->
@@ -90,7 +90,7 @@ class Database
             proto = @getProtoOrThrow('activeRecordPrototypes', gw.schema.one)
 
         # MUST: make sure result set covers at least one key in schema, throw
-        # otherise
+        # otherwise
 
         return (err, data) ->
             return cb(err) if err

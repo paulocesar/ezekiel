@@ -50,9 +50,9 @@ describe 'ActiveRecord', () ->
 
     it 'can insert a row', (done) ->
         o = db.fighter(testData.newFighter())
-        o._stateName().should.eql('unknown')
+        o._stateName().should.eql('new')
 
-        o.insert (err) ->
+        o.persist (err) ->
             return done(err) if err
             o._stateName().should.eql('persisted')
             o.id.should.eql(cntFighters + 1)
@@ -65,7 +65,7 @@ describe 'ActiveRecord', () ->
             o.firstName = 'The Greatest' # No wind or waterfall could stall me
             o._isDirty().should.be.true
 
-            o.update (err) ->
+            o.persist (err) ->
                 return done(err) if err
                 o._isDirty().should.be.false
                 o._stateName().should.eql('persisted')
@@ -79,7 +79,7 @@ describe 'ActiveRecord', () ->
             o.id.should.eql(4)
             o._stateName().should.eql('persisted')
 
-            o.delete (err) ->
+            o.destroy (err) ->
                 return done(err) if err
-                o._stateName().should.eql('deleted')
+                o._stateName().should.eql('destroyed')
                 assertCount cntFighters - 1, done
