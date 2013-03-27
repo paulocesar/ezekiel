@@ -26,13 +26,19 @@ class TableGateway
         ar._load(@, data)
         return ar
 
-    findOne: () -> @doOne(@_find, arguments, 'find')
+    selectOne: (predicate, cb) -> @doOne(@_select, arguments, "select")
+    selectMany: (predicate, cb) -> @_query(predicate, "allRows", cb)
+    _select: (predicate, cb) -> @_query(predicate, "oneRow", cb)
+
+    findOne: () -> @doOne(@_find, arguments, "find")
+    findMany: (predicate, cb) -> @_query(predicate, "allObjects", cb)
+    _find: (predicate, cb) -> @_query(predicate, "oneObject", cb)
+
+    _query: (predicate, dbFunction, cb) ->
+        q = @newQuery().where(predicate)
+        return @db.bindOrCall(q, dbFunction, cb)
 
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
-
-    _find: (predicate, cb) ->
-        q = @newQuery().where(predicate)
-        return @db.bindOrCall(q, 'oneObject', cb)
 
     _delete: (predicate, cb) ->
         s = sql.delete(@sqlAlias(), predicate)
@@ -139,10 +145,6 @@ class TableGateway
     _update: (predicate, cb, values) ->
         s = sql.update(@sqlAlias(), values, predicate)
         return @db.bindOrCall(s, 'noData', cb)
-
-    findMany: (predicate, cb) ->
-        q = @newQuery().where(predicate)
-        return @db.bindOrCall(q, 'allObjects', cb)
 
     deleteMany: (predicate, cb) ->
         s = sql.delete(@sqlAlias()).where(predicate)
