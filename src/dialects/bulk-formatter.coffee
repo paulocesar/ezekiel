@@ -36,11 +36,11 @@ bulk = {
 
     _addBulkInserts: (rows) ->
         return if _.isEmpty(rows)
-        # MUST: implement
+        F.throw("not implemented")
 
     _addBulkUpdates: (keyName, rows) ->
         return if _.isEmpty(rows)
-        # MUST: implement
+        F.throw("not implemented")
 
     _addBulkMerges: (keyName, rows) ->
         return if _.isEmpty(rows)

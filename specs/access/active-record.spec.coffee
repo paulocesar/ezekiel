@@ -30,52 +30,54 @@ assertIdOne = (rowAssert, done) ->
             h.cleanTestData(done)
 
 describe 'ActiveRecord', () ->
-    it 'Can be instantiated via db.newObject()', ->
+    it 'can be instantiated via db.newObject()', ->
         for t in schema.tables
             o = db.newObject(t.one)
             o.should.be.an.instanceof(ActiveRecord)
             o.toString().should.include(t.one)
 
-    it 'Can be instantiated via db[table.one]()', ->
+    it 'can be instantiated via db[table.one]()', ->
         for t in schema.tables
             o = db[t.one]()
             o.should.be.an.instanceof(ActiveRecord)
             o.toString().should.include(t.one)
 
-    it 'Can be loaded from DB via db[table.one](id)', (done) ->
+    it 'can be loaded from DB via db[table.one](id)', (done) ->
         db.fighter 1, (err, row) ->
             return done(err) if err
             row.id.should.eql(1)
             done()
 
-    it 'Can insert a row', (done) ->
-        o = db.fighter().new(testData.newFighter())
-        o._stateName().should.eql('new')
+    it 'can insert a row', (done) ->
+        o = db.fighter(testData.newFighter())
+        o._stateName().should.eql('unknown')
 
-        o.persist (err) ->
+        o.insert (err) ->
             return done(err) if err
-            o._stateName().should.eql('loaded')
+            o._stateName().should.eql('persisted')
             o.id.should.eql(cntFighters + 1)
             assertCount cntFighters + 1, done
 
-    it 'Can update a row', (done) ->
+    it 'can update a row', (done) ->
         db.fighter 1, (err, o) ->
             return done(err) if err
-            o._stateName().should.eql('loaded')
+            o._stateName().should.eql('persisted')
             o.firstName = 'The Greatest' # No wind or waterfall could stall me
+            o._isDirty().should.be.true
 
-            o.persist (err) ->
+            o.update (err) ->
                 return done(err) if err
-                o._stateName().should.eql('loaded')
-                _.isEmpty(o._s.changed).should.be.true
+                o._isDirty().should.be.false
+                o._stateName().should.eql('persisted')
+                _.isEmpty(o._changed).should.be.true
                 o.firstName.should.eql('The Greatest')
                 done()
 
-    it 'Can delete a row', (done) ->
+    it 'can delete a row', (done) ->
         db.fighter 4, (err, o) ->
             return done(err) if err
             o.id.should.eql(4)
-            o._stateName().should.eql('loaded')
+            o._stateName().should.eql('persisted')
 
             o.delete (err) ->
                 return done(err) if err

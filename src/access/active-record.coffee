@@ -1,4 +1,5 @@
 _ = require('underscore')
+F = require('functoids/src')
 
 { SqlToken } = sql = require('../sql')
 queryBinder = require('./query-binder')
@@ -6,82 +7,47 @@ queryBinder = require('./query-binder')
 states = [
     {
         name: 'unknown'
-        persist: (gw, cb) -> gw.upsertOne @changed, @makePersistHandler(cb)
-        delete: (gw, cb) -> gw.deleteOne @changed, @makeDeleteHandler(cb)
+        insert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
+        update: (cb) -> @_gw.updateOne @_changed, @_makePersistHandler(cb)
+        upsert: (cb) -> @_gw.upsertOne @_changed, @_makePersistHandler(cb)
+        delete: (cb) -> @_gw.deleteOne @_changed, @_makeDeleteHandler(cb)
     }
     {
-        name: 'loaded'
-        persist: (gw, cb) -> gw.updateOne @changed, @loaded, @makePersistHandler(cb)
-        delete: (gw, cb) -> gw.deleteOne @loaded, @makeDeleteHandler(cb)
+        name: 'persisted'
+        insert: (cb) -> @throwBadStateFor('insert')
+        update: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
+        upsert: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
+        delete: (cb) -> @_gw.deleteOne @_persisted, @_makeDeleteHandler(cb)
     }
     {
         name: 'new'
-        persist: (gw, cb) -> gw.insertOne @changed, @makePersistHandler(cb)
-        delete: (gw, cb) -> @demandStateFor('delete', 'not new')
+        insert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
+        update: (cb) -> @throwBadStateFor('update')
+        upsert: (cb) -> @_gw.insertOne @_changed, @_makePersistHandler(cb)
+        delete: (cb) -> @throwBadStateFor('delete')
     }
     {
         name: 'deleted'
-        persist: (gw, cb) -> @demandStateFor('persist', 'not deleted')
-        delete: (gw, cb) -> @demandStateFor('delete', 'not deleted')
+        insert: (cb) -> @throwBadStateFor('insert')
+        update: (cb) -> @throwBadStateFor('update')
+        upsert: (cb) -> @throwBadStateFor('upsert')
+        delete: (cb) -> @throwBadStateFor('delete')
     }
 ]
 
-class ActiveRecordState
-    constructor: (@loaded = {}, @changed = {}, @n = 0) ->
-    name: () -> states[@n].name
-    toString: () -> "<ActiveRecordState: #{@name()}>"
-
-    persist: (gw, cb) -> states[@n].persist.call(@, gw, cb)
-    delete: (gw, cb) -> states[@n].delete.call(@, gw, cb)
-
-    get: (key) -> @changed[key] ? @loaded[key]
-
-    set: (key, value) ->
-      if @loaded[key] == value
-        delete @changed[key]
-        return
-
-      @changed[key] = value
-
-    demandStateFor: (op, s) ->
-      F.throw("Cannot do operation #{op} in state #{@name()}. State must be #{s}")
-
-    makePersistHandler: (cb) ->
-        (err, outputValues) =>
-            return cb(err) if err
-
-            @loaded = _.extend(@loaded, @changed, outputValues)
-            @n = 1
-            @changed = {}
-            cb(null, outputValues)
-
-    makeDeleteHandler: (cb) ->
-        (err) =>
-            return cb(err) if err
-            @n = 3
-            cb()
-
-    load: (o) ->
-        @demandStateFor('load', 'not deleted') if @n == 3
-        @loaded = o
-        @n = 1
-
-    new: (o) ->
-        @demandStateFor('new', 'unknown') if @n != 0
-        @changed = o
-        @n = 2
-
 class ActiveRecord
-    constructor: (@gw, @schema, @_s = null) ->
-        @_columnAccessors = {}
+    constructor: (@_gw, @_schema) ->
+        for c in @_schema.columns
+            @_addColumnAccessor(c)
 
-        for c in @schema.columns
-            @addColumnAccessor(c)
+        @_persisted = @_changed = null
+        @_n = 0
 
-    toString: () -> "<ActiveRecord for #{@schema.one}, #{@_stateName()}>"
-    _stateName: () -> @_s.name()
+    # SHOULD: include id in toString()
+    toString: () -> "<ActiveRecord for #{@_schema.one}, #{@_stateName()}>"
+    _stateName: () -> states[@_n].name
 
-    addColumnAccessor: (c) ->
+    _addColumnAccessor: (c) ->
         key = c.property
         return if key of @
 
@@ -90,10 +56,14 @@ class ActiveRecord
             set: (v) -> @set(key, v)
         })
 
-    get: (property) -> @_s.get(property)
+    get: (key) -> @_changed[key] ? @_persisted[key]
+      
+    set: (key, value) ->
+      if @_persisted[key] == value
+        delete @_changed[key]
+        return
 
-    set: (property, v) ->
-      @_s.set(property, v)
+      @_changed[key] = value
       return @
 
     setMany: (o) ->
@@ -101,18 +71,63 @@ class ActiveRecord
       return @
 
     attach: (gw, s) ->
-        @gw = gw
-        @_s = s ? new ActiveRecordState()
+        @_gw = gw
+        @_init()
 
-    load: (o) ->
-      @_s.load(o)
-      return @
+    _init: () ->
+        @_n = 0
+        @_persisted = {}
+        @_changed = {}
 
-    new: (o) ->
-        @_s.new(o)
+    throwBadStateFor: (op) ->
+      F.throw("#{@} cannot do operation #{op} in state #{@_stateName()}.")
+
+    _makePersistHandler: (cb) ->
+        (err, outputValues) =>
+            return cb(err) if err
+
+            @_persisted = _.extend(@_persisted, @_changed, outputValues)
+            @_n = 1
+            @_changed = {}
+            cb(null, @)
+
+    _makeDeleteHandler: (cb) ->
+        (err) =>
+            return cb(err) if err
+            @_n = 3
+            cb()
+
+    setNew: () ->
+        @throwBadStateFor('setNew') if @_n != 0
+        @_n = 2
         return @
 
-    persist: (cb) -> @_s.persist(@gw, cb)
-    delete: (cb) -> @_s.delete(@gw, cb)
+    setPersisted: (data) ->
+        F.demandNonEmptyObject(data, 'data')
+
+        @throwBadStateFor('setPersisted') if @_n == 3
+
+        unless @_schema.coversSomeKey(data)
+            F.throw("Argument 'data' does not cover any keys in #{@_schema}")
+
+        @_persisted = data
+        @_n = 1
+        return @
+
+    _isDirty: () -> @_n in [0,2] || !_.isEmpty(@_changed)
+
+    insert: (cb) -> states[@_n].insert.call(@, cb)
+
+    # SHOULD: consider calling cb in next tick, so that we always look async
+    # to the caller
+    update: (cb) ->
+        return cb(null, @) unless @_isDirty()
+        states[@_n].update.call(@, cb)
+
+    upsert: (cb) ->
+        return cb(null, @) unless @_isDirty()
+        states[@_n].upsert.call(@, cb)
+
+    delete: (cb) -> states[@_n].delete.call(@, cb)
 
 module.exports = ActiveRecord

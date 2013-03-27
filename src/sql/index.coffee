@@ -189,9 +189,7 @@ class SqlOr extends SqlBooleanOp
 
 class SqlStatement extends SqlToken
     constructor: (table) ->
-        unless table?
-            throw new Error('SqlStatement constructor: you must provide a table')
-
+        F.demandNotNil(table, 'table')
         @targetTable = sql.name(table)
 
 module.exports = sql
@@ -217,6 +215,7 @@ require('./sql-select')
 require('./sql-insert')
 require('./sql-delete')
 require('./sql-update')
+require('./sql-upsert')
 require('./sql-operators')
 require('./sql-functions')
 require('./sql-merge')

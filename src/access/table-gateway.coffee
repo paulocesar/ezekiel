@@ -52,11 +52,34 @@ class TableGateway
         return fn.call(@, predicate, cb, queryArgument)
 
     insertOne: (values, cb) ->
-        F.demandObject(values, 'values')
+        F.demandNonEmptyObject(values, 'values')
 
         @schema.demandInsertable(values)
 
         q = sql.insert(@sqlAlias(), values)
+        return @doOutputQuery(q, cb)
+
+    upsertOne: (values, cb) ->
+        F.demandNonEmptyObject(values, 'values')
+
+        canInsert = @schema.canInsert(values)
+        mergeKey = @schema.getBestKeyForMerging(values)
+
+        unless canInsert || mergeKey?
+            e = "Cannot upsert values into #{@schema}: " + @schema.getMergeErrors(values)
+            return @bindError(e, cb)
+
+        if canInsert && !mergeKey?
+           return @insertOne(values, cb)
+
+        if mergeKey? && !canInsert
+            return @updateOne(values, cb)
+
+        keyProperties = mergeKey.properties()
+        q = sql.upsert(@sqlAlias(), values, keyProperties)
+        return @doOutputQuery(q, cb)
+
+    doOutputQuery: (q, cb) ->
         if @schema.hasReadOnly()
             q.output(@schema.readOnlyProperties())
             fn = 'oneRow'
@@ -65,13 +88,18 @@ class TableGateway
 
         return @db.bindOrCall(q, fn, cb)
 
+    # updateOne has two usages:
+    #
+    # updateOne(updateValues, predicate, cb), which separates what's being
+    # updated from the values to be used in the WHERE clause
+    #
+    # updateOne(data, cb), which gives us everything in one object, forcing us
+    # to look at the schema and figure out what needs to be done
+    #
+    # This makes it a little different from the other one() methods
     updateOne: (updateValues, args...) ->
         F.demandNonEmptyObject(updateValues, 'updateValues',
             "be an object containing the values to be updated in #{@schema}")
-
-        if _.isEmpty(updateValues)
-            F.throw("Argument 'updateValues' cannot be null. It ")
-            
 
         cb = F.lastIfFunction(args)
         cntKeyValues = if cb? then args.length - 1 else args.length
@@ -80,14 +108,16 @@ class TableGateway
 
         # Ok, now we have work. The caller was lazy and threw us just one object, which must
         # have keys along with values being updated. We need to separate keys from values.
-        #
-        # If the caller provides the value for a read-only DB key (eg, an identity column), then
-        # that key is used as the only predicate, and we try to update everything else - even
-        # a value passed in for a non-read-only unique key.  This is nice because it's common to
-        # have a read-only identity PK, but a UNIQUE constraint on some other fields that might be
-        # changed every once in a while. This logic lets callers handle that pretty easily.
+        key = @schema.getBestKeyForMerging(updateValues)
+        unless key?
+            e = ["When passing a single object to updateOne(), it must include values for"
+                "at least one key in #{@schema}"].join(' ')
+            return @bindError(e, cb)
 
-        throw new Error("we don't like work")
+        keyValues = key.wrapValues(updateValues)
+        key.deleteValues(updateValues)
+
+        @_update(keyValues, cb, updateValues)
 
     _update: (predicate, cb, values) ->
         s = sql.update(@sqlAlias(), values, predicate)

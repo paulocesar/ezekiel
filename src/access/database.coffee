@@ -43,7 +43,7 @@ class Database
 
     newObject: (one) ->
         proto = @getProtoOrThrow('activeRecordPrototypes', one)
-        gw = @getTableGateway(proto.schema.many)
+        gw = @getTableGateway(proto._schema.many)
         return newActiveRecord(proto, gw)
 
     getProtoOrThrow: (propertyName, key) ->
@@ -89,16 +89,19 @@ class Database
             gw = @_tableGatewayFromQuery(query)
             proto = @getProtoOrThrow('activeRecordPrototypes', gw.schema.one)
 
+        # MUST: make sure result set covers at least one key in schema, throw
+        # otherise
+
         return (err, data) ->
             return cb(err) if err
 
             if _.isArray(data)
                 for row, i in data
-                    data[i] = newActiveRecord(proto, gw).load(row)
+                    data[i] = newActiveRecord(proto, gw).setPersisted(row)
                 result = data
             else
-                result = newActiveRecord(proto, gw).load(data)
-
+                result = newActiveRecord(proto, gw).setPersisted(data)
+            
             cb(null, result)
 
     _tableGatewayFromQuery: (query) ->

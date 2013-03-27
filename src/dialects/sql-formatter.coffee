@@ -135,7 +135,7 @@ class SqlFormatter
 
     # A column might be an actual table column, but it could also be an expression,
     # SQL literal, subquery, etc.
-    _doColumnAtom: (atom) ->
+    doColumnAtom: (atom) ->
         t = @tokenizeColumn(atom)
         return @_doToken(t)
 
@@ -164,13 +164,13 @@ class SqlFormatter
     naryOp: (op, atoms) ->
         switch op
             when 'isNull'
-                pieces = ("#{@_doColumnAtom(a)} IS NULL" for a in atoms)
+                pieces = ("#{@doColumnAtom(a)} IS NULL" for a in atoms)
             when 'isntNull', 'isNotNull'
-                pieces = ("#{@_doColumnAtom(a)} IS NOT NULL" for a in atoms)
+                pieces = ("#{@doColumnAtom(a)} IS NOT NULL" for a in atoms)
             when 'isGood'
                 pieces = []
                 for a in atoms
-                    s = @_doColumnAtom(a)
+                    s = @doColumnAtom(a)
                     pieces.push("#{s} IS NOT NULL AND LEN(RTRIM(LTRIM(#{s}))) > 0")
 
         return pieces.join(' AND ')
@@ -180,7 +180,7 @@ class SqlFormatter
         F.demandNotNil(op, "op")
         F.demandNotNil(right, "right")
 
-        l = @_doColumnAtom(left)
+        l = @doColumnAtom(left)
         
         sqlOp = operatorAliases[op] ? op.toUpperCase()
         
@@ -230,7 +230,7 @@ class SqlFormatter
         if call.args.length == 0
             return prologue + epilogue
 
-        @doList(call.args, @_doColumnAtom, ', ', prologue, epilogue)
+        @doList(call.args, @doColumnAtom, ', ', prologue, epilogue)
 
 
     doList: (collection, fn = @f, separator = ', ', prologue = '', epilogue = '') ->
@@ -444,12 +444,12 @@ class SqlFormatter
 
     where: (c) -> if c.whereClause? then " WHERE #{(c.whereClause.toSql(@))}"  else ''
 
-    groupBy: (c) -> @doList(c.groupings, @_doColumnAtom, ', ', ' GROUP BY ')
+    groupBy: (c) -> @doList(c.groupings, @doColumnAtom, ', ', ' GROUP BY ')
 
     orderBy: (c) -> @doList(c.orderings, @ordering, ', ', ' ORDER BY ')
 
     ordering: (o) ->
-        s = @_doColumnAtom(F.firstOrSelf(o))
+        s = @doColumnAtom(F.firstOrSelf(o))
         dir = if F.secondOrNull(o) == 'DESC' then 'DESC' else 'ASC'
 
         "#{s} #{dir}"
@@ -482,6 +482,18 @@ class SqlFormatter
         ret += "VALUES (#{values.join(', ')})"
 
     update: (stmt) ->
+        #names = []
+        #values = []
+        #@fillNamesAndValues(stmt.values, names, values)
+
+        #ret = [
+            #"UPDATE #{@_doTargetTable(stmt.targetTable)} SET "
+            #("#{names[i]} = #{values[i]}" for i in names).join(", ")
+            #@where(stmt)
+        #]
+
+        #return ret.join('')
+
         ret = "UPDATE #{@_doTargetTable(stmt.targetTable)} SET "
 
         values = []
@@ -495,13 +507,58 @@ class SqlFormatter
         ret += @where(stmt)
         return ret
 
-    _doInsertUpdateColumn: (atom) ->
-        alias = _.secon
+    upsert: (stmt) ->
+        names = []
+        values = []
+        @fillNamesAndValues(stmt.values, names, values)
+        
+        eq = (c) -> "target.#{c} = source.#{c}"
+        onColumns = (@doColumnAtom(c) for c in stmt.onColumns)
+        onClauses = (eq(c) for c in onColumns).join(" AND ")
+        updates = (eq(c) for c in names when !_.contains(onColumns, c)).join(", ")
+
+        ret = [
+            "MERGE #{@_doTargetTable(stmt.targetTable)} AS target"
+            "USING (SELECT " + values.join(', ') + ")"
+            "AS source (" + names.join(', ') + ")"
+            "ON (#{onClauses})"
+            "WHEN MATCHED THEN"
+            "  UPDATE SET #{updates}"
+            "WHEN NOT MATCHED THEN"
+            "  INSERT (" + names.join(", ") + ")"
+            "  VALUES (" + values.join(", ") + ")"
+        ]
+
+        @addOutputColumns(ret, stmt.outputColumns)
+        @addSemicolon(ret)
+        return ret.join('\n')
+
+    addSemicolon: (a) ->
+        F.demandGoodArray(a)
+        a[a.length-1] += ";"
+
+    addOutputColumns: (a, outputColumns) ->
+        F.demandGoodArray(a, 'a')
+        return unless outputColumns?
+        
+        outputs = (@doOutputColumn(o, 'inserted') for o in [].concat(outputColumns))
+        a.push("OUTPUT #{outputs.join(', ')}")
+
+    fillNamesAndValues: (data, names, values) ->
+        for k, v of data
+            c = @_doInsertUpdateColumn(k)
+            continue unless c
+            names.push(c)
+            values.push(@f(v))
+
+        return
+
+    _doInsertUpdateColumn: (atom, skipTrouble = true) ->
         token = @tokenizeColumn(atom)
         schema = token._schema
         # MUST: change this behavior. This seemed useful at one point, but really it masks
         # a nasty error if the caller misspells a column name
-        if @targetSchema? && (not schema? || schema.isReadOnly)
+        if @targetSchema? && skipTrouble && (not schema? || schema.isReadOnly)
             return false
 
         return @_doToken(token)

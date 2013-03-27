@@ -1,9 +1,12 @@
 _ = require("underscore")
+F = require('functoids/src')
 sql = require('./index')
 { SqlFilteredStatement } = require('./shared')
 
 class SqlUpdate extends SqlFilteredStatement
-    constructor: (t, @values, predicate) -> super(t, predicate)
+    constructor: (table, @values, predicate) ->
+        super(table, predicate)
+        F.demandNotNil(values, 'values')
 
     toSql: (f) -> f.update(@)
 

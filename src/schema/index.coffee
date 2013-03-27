@@ -200,6 +200,16 @@ class Key extends Constraint
         unless keyValues?
             F.throw("You must provide the key values corresponding to the columns in #{@}")
 
+        if _.isObject(keyValues) && !_.isArray(keyValues)
+            o = {}
+            for c in @columns
+                p = c.property
+                unless p of keyValues
+                    F.throw("The given object has no property #{p} corresponding to column #{c}")
+                o[p] = keyValues[p]
+
+            return o
+
         unless @matchesShape(keyValues)
             F.throw("The key values provided (#{keyValues}) do not match the shape of #{@}")
 
@@ -214,6 +224,13 @@ class Key extends Constraint
         for c in @columns
             return false unless values[c.property]?
         return true
+
+    deleteValues: (values) ->
+        delete values[c.property] for c in @columns
+        return values
+
+    names: () -> _.pluck(@columns, 'name')
+    properties: () -> _.pluck(@columns, 'property')
 
 class ForeignKey extends Constraint
     finish: () ->
