@@ -82,8 +82,8 @@ validateConnection = (conn, e = []) ->
 removeExtensions = (fileNames) -> (P.basename(f, P.extname(f)) for f in fileNames)
 
 resolveRequires = (config, cb) ->
-    arPath = P.resolve(config.require, 'activeRecord')
-    gwPath = P.resolve(config.require, 'tableGateway')
+    arPath = P.resolve(config.require, 'activeRecords')
+    gwPath = P.resolve(config.require, 'tableGateways')
 
     tasks = {
         activeRecords: (cb) -> fs.readdir(arPath, cb)

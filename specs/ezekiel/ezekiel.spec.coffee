@@ -47,6 +47,8 @@ describe 'Ezekiel', () ->
 
         ezekiel.connect config, (err, db) ->
             return done(err) if err
+            f = db.fighter( { lastName: 'Machida', firstName: 'Lyoto' })
+            f.sayHi().should.eql("Hi, my name is Lyoto Machida")
             h.assertLoadedSchema(db.schema, done)
 
     it 'sends error if require path is wrong', (done) ->
