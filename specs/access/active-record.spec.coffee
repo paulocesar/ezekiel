@@ -30,9 +30,9 @@ assertIdOne = (rowAssert, done) ->
             h.cleanTestData(done)
 
 describe 'ActiveRecord', () ->
-    it 'can be instantiated via db.newObject()', ->
+    it 'can be instantiated via TableGateway.newObject()', ->
         for t in schema.tables
-            o = db.newObject(t.one)
+            o = db.getTableGateway(t.many).newObject()
             o.should.be.an.instanceof(ActiveRecord)
             o.toString().should.include(t.one)
 

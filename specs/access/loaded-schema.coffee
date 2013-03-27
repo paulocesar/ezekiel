@@ -32,7 +32,7 @@ assertGateway = (gw, many) ->
     gw.schema.should.eql(tables[many])
 
 assertNewObject = (one) ->
-    o = db.newObject(one)
+    o = db[one]()
     o.should.be.an.instanceof(ActiveRecord)
 
 describe 'Database with loaded schema', () ->
@@ -52,5 +52,5 @@ describe 'Database with loaded schema', () ->
             else
                 v.should.eql(newDb[k])
 
-    it 'Exposes active records via newObject()', () ->
+    it 'Exposes active records via entity()', () ->
         assertNewObject(one) for one of schema.tablesByOne

@@ -57,14 +57,17 @@ class ActiveRecord
       @set(k, v) for k, v of o
       return @
 
-    attach: (gw, s) ->
-        @_gw = gw
-        @_init()
-
-    _init: () ->
+    _new: (@_gw, data) ->
         @_n = 0
         @_persisted = {}
         @_changed = {}
+        @setMany(data) if data?
+
+    _load: (@_gw, data) ->
+        @_n = 1
+        @_persisted = data
+        @_changed = {}
+        return @
 
     throwBadStateFor: (op) ->
       F.throw("#{@} cannot do operation #{op} in state #{@_stateName()}.")

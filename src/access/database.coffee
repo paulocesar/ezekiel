@@ -14,11 +14,6 @@ msgPassActiveRecordType =
     "or SqlSelect without tables, you must provide the desired object type as a parameter. " +
     "For example: db.oneObject('SELECT * FROM customers WHERE Id = 1', 'customer', cb)"
 
-newActiveRecord = (proto, tableGateway) ->
-    ar = Object.create(proto)
-    ar.attach(tableGateway)
-    return ar
-    
 # MUST: take schema as config object or never again. Ezekiel will take care of reading schema files
 # or loading meta data from the database.
 class Database
@@ -28,32 +23,22 @@ class Database
         @adapter = @utils = null
         @tableGateways = {}
         @tableGatewayPrototypes = {}
-        @activeRecordPrototypes = {}
         @context = {}
 
     getTableGateway: (many) ->
         gw = @tableGateways[many]
         return gw if gw?
 
-        proto = @getProtoOrThrow('tableGatewayPrototypes', many)
+        proto = @tableGatewayPrototypes[many]
+        unless proto?
+            F.throw("Could not find an entry in tableGatewayPrototypes for #{many}. Make sure"
+                "you have loaded a schema into this database instance and check spelling and"
+                "capitalization. You can inspect db.tableGatewayPrototypes to see the available"
+                "ones. May the force be with you.")
 
         gw = Object.create(proto)
         gw.db = @
         return (@tableGateways[many] = gw)
-
-    newObject: (one) ->
-        proto = @getProtoOrThrow('activeRecordPrototypes', one)
-        gw = @getTableGateway(proto._schema.many)
-        return newActiveRecord(proto, gw)
-
-    getProtoOrThrow: (propertyName, key) ->
-        proto = @[propertyName][key]
-        return proto if proto?
-
-        F.throw("Could not find an entry in #{propertyName} for #{key}. Make sure"
-            "you have loaded a schema into this database instance and check spelling and"
-            "capitalization. You can inspect the #{propertyName} property to see the available"
-            "prototypes. Good luck.")
 
     newContext: (context) ->
         newDb = Object.create(@)
@@ -82,26 +67,24 @@ class Database
     _buildRowWrapper: (query, typeOrCb, cbOrNull) ->
         cb = cbOrNull ? typeOrCb
         if cbOrNull?
-            one = typeOrCb
-            proto = @getProtoOrThrow('activeRecordPrototypes', one)
-            gw = @getTableGateway(proto.schema.many)
+            type = typeOrCb
+            schema = @schema.tablesByOne[type] ? @schema.tablesByMany[type]
+            F.throw("Could not find a table schema for '#{type}'") unless schema?
+            gw = @getTableGateway(schema.many)
         else
             gw = @_tableGatewayFromQuery(query)
-            proto = @getProtoOrThrow('activeRecordPrototypes', gw.schema.one)
-
-        # MUST: make sure result set covers at least one key in schema, throw
-        # otherwise
 
         return (err, data) ->
             return cb(err) if err
-
-            if _.isArray(data)
-                for row, i in data
-                    data[i] = newActiveRecord(proto, gw).setPersisted(row)
-                result = data
-            else
-                result = newActiveRecord(proto, gw).setPersisted(data)
             
+            # So far we have trusted the caller knows what they're doing and
+            # made sure to fetch keys for whatever ActiveRecord type they wish
+            # to work with. If they HAVEN'T, attach() is going to throw at us
+            try
+                result = gw.attach(data)
+            catch e
+                return cb(e)
+
             cb(null, result)
 
     _tableGatewayFromQuery: (query) ->
@@ -186,8 +169,8 @@ class Database
         @schema = schema.finish()
 
         for t in @schema.tables
-            @tableGatewayPrototypes[t.many] = new TableGateway(null, t)
-            @activeRecordPrototypes[t.one] = new ActiveRecord(null, t)
+            arProto = new ActiveRecord(null, t)
+            @tableGatewayPrototypes[t.many] = new TableGateway(null, t, arProto)
             @makeAccessors(t)
 
         return @schema
@@ -206,13 +189,13 @@ class Database
 
     makeObjectGetter: (t) ->
         () ->
-            o = @newObject(t.one)
-            return o if arguments.length == 0
+            gw = @getTableGateway(t.many)
+
+            return gw.newObject() if arguments.length == 0
 
             arg = arguments[0]
-            return o.setMany(arg) if _.isObject(arg)
+            return gw.newObject(arg) if _.isObject(arg)
 
-            gw = @getTableGateway(t.many)
             return gw.findOne.apply(gw, arguments)
 
 module.exports = dbObjects.Database = Database

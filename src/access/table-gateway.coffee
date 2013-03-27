@@ -5,12 +5,29 @@ F = require('functoids/src')
 queryBinder = require('./query-binder')
 
 class TableGateway
-    constructor: (@db, @schema) ->
+    constructor: (@db, @schema, @arProto) ->
 
     sqlAlias: () -> @schema.many
     toString: () -> "<TableGateway to #{@sqlAlias()}>"
 
+    newObject: (data) ->
+        ar = Object.create(@arProto)
+        ar._new(@, data)
+        return ar
+
+    attach: (data) ->
+        if _.isArray(data)
+            return (@_attachOne(r) for r in data)
+        else
+            return @_attachOne(data)
+
+    _attachOne: (data) ->
+        ar = Object.create(@arProto)
+        ar._load(@, data)
+        return ar
+
     findOne: () -> @doOne(@_find, arguments, 'find')
+
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
     _find: (predicate, cb) ->
