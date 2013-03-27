@@ -123,7 +123,7 @@ class TableGateway
         s = sql.update(@sqlAlias(), values, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
-    selectMany: (predicate, cb) ->
+    findMany: (predicate, cb) ->
         q = @newQuery().where(predicate)
         return @db.bindOrCall(q, 'allObjects', cb)
 

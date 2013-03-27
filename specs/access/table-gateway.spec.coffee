@@ -125,7 +125,7 @@ describe 'TableGateway', () ->
 
 
     it 'selects many objects', (done) ->
-        db.fighters.selectMany { lastName: 'Silva' }, (err, objects) ->
+        db.fighters.findMany { lastName: 'Silva' }, (err, objects) ->
             return done(err) if err
             for o in objects
                 o.should.be.instanceof(ActiveRecord)
