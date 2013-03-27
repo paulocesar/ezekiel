@@ -18,7 +18,7 @@ loadedSchema = null
 
 describe 'DbSchema', () ->
     it 'loads schema correctly', () ->
-        schema.tables.length.should.eql(meta.tables.length)
+        h.assertLoadedSchema(schema)
     
     it 'detects clashes in column positions', () ->
         s = h.newRawSchema()

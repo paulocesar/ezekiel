@@ -3,6 +3,8 @@ path = require('path')
 _ = require('underscore')
 F = require('functoids/src')
 A = async = require('async')
+should = require('should')
+
 
 testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
@@ -34,6 +36,11 @@ schemaDb = () ->
     db.loadSchema(newRawSchema())
     return db
 
+assertLoadedSchema = (schema, done) ->
+    should.exist(schema)
+    schema.tables.length.should.eql(getMetaData().tables.length)
+    done?()
+
 assertSqlFormatting = (schema, sql, expected, debug) ->
     f = new SqlFormatter(schema)
     ret = f.format(sql)
@@ -44,14 +51,6 @@ assertSqlFormatting = (schema, sql, expected, debug) ->
         console.log(expected)
 
     ret.should.eql(expected)
-
-connectToDb = (cb) ->
-    ezekiel.connect(testConfig.databases['mssql'], (err, database) ->
-        if (err)
-            F.throw('Could not connect to DB while testing:', err)
-
-        cb(database)
-    )
 
 metaData = null
 getMetaData = () ->
@@ -100,14 +99,13 @@ module.exports = {
 
     dump: (o, depth = 5) -> console.log(util.inspect(o, true, depth, true))
 
-    connectToDb
-
     getMetaData
     getRawSchema
     newRawSchema
     getCookedSchema
     newCookedSchema
     cookSchema
+    assertLoadedSchema
 
     blankDb
     schemaDb

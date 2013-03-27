@@ -2,6 +2,7 @@ h = require('./test-helper')
 DbSchema = h.requireSrc('schema/db-schema')
 SqlFormatter = h.requireSrc('dialects/sql-formatter')
 sql = h.requireSrc('sql')
+ezekiel = h.requireSrc()
 
 data = require('./data/test-data.coffee')
 
@@ -19,15 +20,15 @@ cleanTestData = (cb) ->
 before (done) ->
     h.cleanTestData = cleanTestData
 
-    h.connectToDb (freshDb) ->
-        freshDb.utils.buildFullSchema (err, dataDictionary) ->
-            done(err) if err
-            s = new DbSchema()
-            s.loadDataDictionary(dataDictionary)
-            h.cookSchema(s)
-            freshDb.loadSchema(s)
-            h.liveDb = h.db = freshDb
-            cleanTestData(done)
+    config = {
+        processSchema: h.cookSchema
+        connection: h.defaultDbConfig
+    }
+
+    ezekiel.connect config, (err, freshDb) ->
+        return done(err) if err?
+        h.liveDb = h.db = freshDb
+        cleanTestData(done)
 
 describe 'Live DB test helper', () ->
     it 'Cleans test data', () ->
