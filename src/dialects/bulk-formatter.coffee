@@ -74,9 +74,8 @@ bulk = {
 
         tempTableName = @nameTempTable('BulkMerge')
 
-        tempTable = schemer.table(name: tempTableName)
-            .addColumns(tempTableColumns)
-            .primaryKey(columns: _.pluck(key.columns, 'name'), isClustered: true)
+        tempTable = schemer.table(name: tempTableName).addColumns(tempTableColumns)
+        tempTable.primaryKey(columns: _.pluck(key.columns, 'name'), isClustered: true)
 
         @addLine(@createTempTable(tempTable))
         @addLine(@_firstInsertLine(tempTable))

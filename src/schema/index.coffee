@@ -138,6 +138,11 @@ class Constraint extends DbObject
             throw new Error("addColumns: you must attach #{@} to a table before adding columns")
 
         for meta in _.flatten(arguments)
+            if _.isString(meta)
+                name = meta
+            else
+                name = meta.columnName ? meta.name
+
             name = if _.isString(meta) then meta else meta.columnName ? meta.name
             unless name?
                 throw new Error("addColumns: you must provide a column name")
@@ -148,7 +153,9 @@ class Constraint extends DbObject
 
             col.isPartOfKey = true if @isKey
 
-            @pushEnforcingPosition(@columns, col, meta.position)
+            # MUST: decide how to handle this baby
+            #@pushEnforcingPosition(@columns, col, meta.position)
+            @columns.push(col)
 
         @isComposite = @columns.length > 1
 

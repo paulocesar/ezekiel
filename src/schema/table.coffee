@@ -23,11 +23,20 @@ class Table extends DbObject
 
     sqlAlias: () -> @many
 
-    column: (meta) -> @addColumns(meta)
+    column: (meta) ->
+        @addColumns(meta)
+        return _.last(@columns)
 
     primaryKey: (meta) ->
         o = { name: "PK_" + @name, type: 'PRIMARY KEY' }
-        return @addKeys(_.extend(o, meta))
+        @addKeys(_.extend(o, meta))
+        return _.last(@keys)
+
+    unique: (meta) ->
+        name = "UQ_" + @name + '_' + meta.columns.join('_')
+        o = { name, type: 'UNIQUE' }
+        @addKeys(_.extend(o, meta))
+        return _.last(@keys)
 
     addColumns: () ->
         for a in _.flatten(arguments)
