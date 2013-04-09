@@ -8,6 +8,8 @@ rgxParseName = ///
     \.?         # optional . at the end
 ///g
 
+rgxSingleQuote = /'/g
+
 rgxStar = /^(?:(.+)\.)?\*$/
 rgxExpression = /[()\+\*\-/]/
 rgxPatternMetaChars = /[%_[]/g
@@ -33,7 +35,7 @@ class SqlFormatter
             return 'NULL'
 
         if _.isString(v)
-            return "'" + v.replace("'","''") + "'"
+            return "'" + v.replace(rgxSingleQuote, "''") + "'"
 
         if _.isArray(v)
             return _.map(v, (i) => @literal(i)).join(', ')
