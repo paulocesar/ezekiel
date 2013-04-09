@@ -43,6 +43,9 @@ class SqlFormatter
         if _.isDate(v)
             return @date(v)
 
+        if _.isBoolean(v)
+            return if v then '1' else '0'
+
         return v.toString()
 
     date: (d) ->
