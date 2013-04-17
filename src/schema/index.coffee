@@ -73,6 +73,7 @@ jsTypes = {
         convert: String
         name: 'String'
         numeric: false
+        string: true
 
     date:
         matchesType: _.isDate
@@ -116,9 +117,13 @@ class Column extends DbObject
         else if @isReadOnly
             return true unless needsMsg
             e = "read-only column"
-        else
-            return null
+        else if @jsType.string && @maxLength?
+            tooLong = v.length > @maxLength
+            if tooLong
+                return true unless needsMsg
+                e = "Length #{v.length} exceeds maxLength of #{@maxLength}"
 
+        return null unless e?
         return "Cannot write value #{v} into #{@}: #{e}."
 
     isFullPrimaryKey: () -> F.isOnlyElement(@table.pk?.columns, @)
