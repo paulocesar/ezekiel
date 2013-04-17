@@ -49,7 +49,7 @@ class TableGateway
         keyValues = F.unwrapArgs(args, cb?)
 
         unless keyValues?
-            F.throw('You must provide key values as arguments to #{opName}One()')
+            F.throw("You must provide key values as arguments to #{opName}One()")
 
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
