@@ -107,7 +107,12 @@ doRequires = (db, requires) ->
         continue unless proto?
 
         path = P.resolve(requires.gwPath, name)
-        require(path)(proto, proto.schema)
+        fn = require(path)
+
+        unless _.isFunction(fn)
+            F.throw("#{path} did not export a function for extending table gateway '#{name}'")
+
+        fn(proto, proto.schema)
 
     for name in requires.activeRecords
         table = db.schema.tablesByOne[name]
@@ -115,7 +120,12 @@ doRequires = (db, requires) ->
 
         gw = db.tableGatewayPrototypes[table.many]
         path = P.resolve(requires.arPath, name)
-        require(path)(gw.arProto, db.schema)
+        fn = require(path)
+
+        unless _.isFunction(fn)
+            F.throw("#{path} did not export a function for extending ActiveRecord '#{name}'")
+
+        fn(gw.arProto, db.schema)
 
 e = ezekiel = {
     connect: (config, cb) ->
