@@ -113,4 +113,13 @@ class ActiveRecord
 
     destroy: (cb) -> states[@_n].destroy.call(@, cb)
 
+Object.defineProperty(ActiveRecord::, "_db", {
+    get: () -> @_gw.db
+})
+
+Object.defineProperty(ActiveRecord::, "_ctx", {
+    get: () -> @_gw.db.context
+})
+
+
 module.exports = ActiveRecord
