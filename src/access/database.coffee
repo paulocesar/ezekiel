@@ -107,16 +107,17 @@ class Database
     _selectOneRow: (query, rowShape, allowEmpty, cb) ->
         opt = {
             rowShape: rowShape
-            onAllRows: (rows) ->
+            onAllRows: (rows) =>
                 if rows.length == 0
                     if !allowEmpty
-                        e  = "_selectOneRow: No data returned for query #{query}. Expected 1 row."
+                        e  = "_selectOneRow: No data returned for query #{@format(query)}. " +
+                            "Expected 1 row."
                         return cb(e)
                     else
                         return cb(null, null)
 
                 if (rows.length != 1)
-                    e = "_selectOneRow: Too many rows returned for query #{query}. " +
+                    e = "_selectOneRow: Too many rows returned for query #{@format(query)}. " +
                         "Expected 1 row but got #{rows.length}"
                     return cb(e)
 
@@ -130,6 +131,9 @@ class Database
             o.stmt = @format(o.stmt)
 
     format: (sql) ->
+        F.demandNotNil(sql, "sql")
+
+        return sql if _.isString(sql)
         f = new @Formatter(@schema)
         return f.format(sql)
 

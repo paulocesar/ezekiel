@@ -14,5 +14,13 @@ describe('Database using sql.* tokens', () ->
             rows.should.be.instanceOf(Array)
             done()
         )
-    
+
+
+    it('returns an error when oneRow finds no rows', (done) ->
+        s = sql.select('id').from('fighters').where(id: -1)
+        db.oneRow(s, (err, r) ->
+            err.should.match(/No data returned for query SELECT \[Id\]/)
+            done()
+        )
+    )
 )
