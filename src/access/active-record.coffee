@@ -113,6 +113,10 @@ class ActiveRecord
 
     destroy: (cb) -> states[@_n].destroy.call(@, cb)
 
+    toJSON: () ->
+        return @_persisted if _.isEmpty(@_changed)
+        return _.extend({}, @_persisted, @_changed)
+
 Object.defineProperty(ActiveRecord::, "_db", {
     get: () -> @_gw.db
 })
