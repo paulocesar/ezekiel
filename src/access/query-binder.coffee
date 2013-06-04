@@ -17,6 +17,8 @@ boundFunctions = {
 class BoundSelect extends SqlSelect
     constructor: (@gw) -> super()
 
+    toString: () -> @db.format(@)
+
     tryCall: (fnName, cb) ->
         fn = @[fnName]
 

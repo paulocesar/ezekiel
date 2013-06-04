@@ -8,14 +8,28 @@ class TableGateway
     constructor: (@db, @schema, @arProto) ->
         @selectClass = class extends BoundSelect
 
+    extend: (obj) ->
+        F.demandHash(obj, "obj")
+        for name, fn of obj
+            F.demandFunction(fn, "fn")
+
+            @[name] = do(fn) ->
+                () ->
+                    q = @newSelect()
+                    fn.apply(q, arguments)
+                    cb = F.lastIfFunction(arguments)
+                    q.tryCall('allObjects', cb)
+
+            @selectClass::[name] = fn
+
+    _new: (@db) ->
+
     toString: () -> "<TableGateway to #{@sqlAlias}>"
 
     newObject: (data) ->
         ar = Object.create(@arProto)
         ar._new(@, data)
         return ar
-
-    _new: (@db) ->
 
     attach: (data) ->
         if _.isArray(data)

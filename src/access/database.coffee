@@ -38,7 +38,6 @@ class Database
 
         gw = Object.create(proto)
         gw._new(@)
-        gw.db = @
         return (@tableGateways[many] = gw)
 
     newContext: (context) ->

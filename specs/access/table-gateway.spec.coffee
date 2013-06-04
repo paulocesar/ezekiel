@@ -145,3 +145,15 @@ describe 'TableGateway', () ->
             done()
         )
 
+    it 'allows extensions', () ->
+        db.fighters.extend({
+            byCountry: (country) -> @where({ country })
+            byLastName: (lastName) -> @where({ lastName })
+        })
+
+        q = db.fighters.byCountry('Brazil').toString()
+        q2 = db.fighters.all().byCountry('Brazil').toString()
+        expected = db.fighters.where(country: 'Brazil').toString()
+
+        q.should.eql(expected)
+        q2.should.eql(expected)
