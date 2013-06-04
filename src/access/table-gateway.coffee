@@ -29,12 +29,12 @@ class TableGateway
         return ar
 
     selectOne: (predicate, cb) -> @doOne(@_select, arguments, "select")
-    selectMany: (predicate, cb) -> @_query(predicate, "allRows", cb)
-    _select: (predicate, cb) -> @_query(predicate, "oneRow", cb)
+    selectMany: (predicate, cb) -> @where(predicate).tryCall("allRows", cb)
+    _select: (predicate, cb) -> @where(predicate).tryCall("oneRow", cb)
 
     findOne: () -> @doOne(@_find, arguments, "find")
-    findMany: (predicate, cb) -> @_query(predicate, "allObjects", cb)
-    _find: (predicate, cb) -> @_query(predicate, "oneObject", cb)
+    findMany: (predicate, cb) -> @where(predicate).tryCall("allObjects", cb)
+    _find: (predicate, cb) -> @where(predicate).tryCall("oneObject", cb)
 
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
@@ -152,8 +152,7 @@ class TableGateway
 
     all: (cb) -> @newSelect().tryCall('allObjects', cb)
 
-    where: (clause, cb) -> @_query(clause, 'allObjects', cb)
-    _query: (predicate, fnName, cb) -> @newSelect().where(predicate).tryCall(fnName, cb)
+    where: (clause, cb) -> @newSelect().where(clause).tryCall('allObjects', cb)
 
     newSelect: () ->
         q = new @selectClass(@)
