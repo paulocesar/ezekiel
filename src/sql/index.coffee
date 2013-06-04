@@ -19,11 +19,17 @@ sql = {
     and: (terms...) -> new SqlAnd(_.map(terms, SqlPredicate.wrap))
     or: (terms...) -> new SqlOr(_.map(terms, SqlPredicate.wrap))
 
-    star: (table) -> new SqlStar(table)
+    star: (table) ->
+        if _.isString(table)
+            table = new SqlFullName(table)
+
+        return new SqlStar(table)
 }
 
 class SqlToken
     cascade: (fn) ->
+        F.demandFunction(fn, "fn")
+
         return if fn(@) == false
 
         children = @getChildren()

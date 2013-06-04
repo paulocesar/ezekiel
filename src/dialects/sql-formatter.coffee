@@ -90,7 +90,8 @@ class SqlFormatter
 
     star: (s) ->
         if (s.table?)
-            return @_doStar(s.table)
+            token = @tokenizeTable(s.table)
+            return @_doStar(token)
         else
             if _.every(@sources, (s) -> not s._schema?)
                 return '*'
@@ -332,8 +333,7 @@ class SqlFormatter
     parseNameOrExpression: (s) ->
         if rgxStar.test(s)
             tableName = s.match(rgxStar)[1]
-            table = @tokenizeTable(tableName) if tableName?
-            return sql.star(table)
+            return sql.star(tableName)
 
         if rgxExpression.test(s)
             return sql.expr(s)
