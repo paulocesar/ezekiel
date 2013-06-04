@@ -36,10 +36,6 @@ class TableGateway
     findMany: (predicate, cb) -> @_query(predicate, "allObjects", cb)
     _find: (predicate, cb) -> @_query(predicate, "oneObject", cb)
 
-    _query: (predicate, dbFunction, cb) ->
-        q = @newSelect().where(predicate)
-        return @db.bindOrCall(q, dbFunction, cb)
-
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
     _delete: (predicate, cb) ->
@@ -156,7 +152,8 @@ class TableGateway
 
     all: (cb) -> @newSelect().tryCall('allObjects', cb)
 
-    where: (clause, cb) ->
+    where: (clause, cb) -> @_query(clause, 'allObjects', cb)
+    _query: (predicate, fnName, cb) -> @newSelect().where(predicate).tryCall(fnName, cb)
 
     newSelect: () ->
         q = new @selectClass(@)

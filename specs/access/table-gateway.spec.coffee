@@ -54,7 +54,7 @@ describe 'TableGateway', () ->
 
     it 'can postpone query execution', (done) ->
         g = fighterGateway()
-        g.findOne(1).run(assertFighterOne(done))
+        g.findOne(1).oneObject(assertFighterOne(done))
 
 
     it 'allows query manipulation', (done) ->
