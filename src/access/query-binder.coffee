@@ -1,4 +1,6 @@
 _ = require('underscore')
+F = require('functoids/src')
+{ SqlSelect } = require('../sql')
 
 boundFunctions = {
     scalar: (cb) -> @db.scalar(@, cb)
@@ -7,13 +9,32 @@ boundFunctions = {
     tryOneRow: (cb) -> @db.tryOneRow(@, cb)
     allRows: (cb) -> @db.allRows(@, cb)
 
-    oneObject: (typeOrCb, cbOrNull) -> @db.oneObject(@, typeOrCb, cbOrNull)
-    allObjects: (typeOrCb, cbOrNull) -> @db.allObjects(@, typeOrCb, cbOrNull)
+    oneObject: (cb) -> @db.oneObject(@, @gw.sqlAlias, cb)
+    allObjects: (cb) -> @db.allObjects(@, @gw.sqlAlias, cb)
     array: (cb) -> @db.array(@, cb)
 }
 
+class BoundSelect extends SqlSelect
+    constructor: (@gw) -> super()
+
+    tryCall: (fnName, cb) ->
+        fn = @[fnName]
+
+        unless fn?
+            F.throw("Cannot call unknown function #{fnName}")
+
+        return if cb? then fn.call(@, cb) else @
+
+_.extend(BoundSelect::, boundFunctions)
+
+Object.defineProperty(BoundSelect::, "db", {
+    get: () -> @gw.db
+})
+
 module.exports = {
     boundFunctions,
+
+    BoundSelect,
 
     bind: (q, db, defaultFn) ->
         bound = Object.create(q)

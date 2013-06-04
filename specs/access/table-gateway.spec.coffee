@@ -59,7 +59,7 @@ describe 'TableGateway', () ->
 
     it 'allows query manipulation', (done) ->
         expected = _.filter(testData.fighters, (f) -> f.lastName == 'Silva').length
-        db.fighters.count().where( { lastName: 'Silva' }).run (err, cnt) ->
+        db.fighters.count().where( { lastName: 'Silva' }).scalar (err, cnt) ->
             return done(err) if err
             cnt.should.eql(expected)
             done()
@@ -144,3 +144,4 @@ describe 'TableGateway', () ->
             fighters.length.should.eql(4)
             done()
         )
+

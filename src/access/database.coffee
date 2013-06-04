@@ -10,7 +10,7 @@ queryBinder = require('./query-binder')
 
 
 msgPassActiveRecordType =
-    "If you want objects from a query that lacks source table information, like a raw string " +
+    "If you want objects from a query that lacks source table information, such as a raw string " +
     "or SqlSelect without tables, you must provide the desired object type as a parameter. " +
     "For example: db.oneObject('SELECT * FROM customers WHERE Id = 1', 'customer', cb)"
 
@@ -37,6 +37,7 @@ class Database
                 "ones. May the force be with you.")
 
         gw = Object.create(proto)
+        gw._new(@)
         gw.db = @
         return (@tableGateways[many] = gw)
 

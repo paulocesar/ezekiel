@@ -2,10 +2,11 @@ _ = require('underscore')
 F = require('functoids/src')
 
 { SqlToken } = sql = require('../sql')
-queryBinder = require('./query-binder')
+{ BoundSelect } = queryBinder = require('./query-binder')
 
 class TableGateway
     constructor: (@db, @schema, @arProto) ->
+        @selectClass = class extends BoundSelect
 
     toString: () -> "<TableGateway to #{@sqlAlias}>"
 
@@ -13,6 +14,8 @@ class TableGateway
         ar = Object.create(@arProto)
         ar._new(@, data)
         return ar
+
+    _new: (@db) ->
 
     attach: (data) ->
         if _.isArray(data)
@@ -34,7 +37,7 @@ class TableGateway
     _find: (predicate, cb) -> @_query(predicate, "oneObject", cb)
 
     _query: (predicate, dbFunction, cb) ->
-        q = @newQuery().where(predicate)
+        q = @newSelect().where(predicate)
         return @db.bindOrCall(q, dbFunction, cb)
 
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
@@ -149,15 +152,15 @@ class TableGateway
         s = sql.delete(@sqlAlias).where(predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
-    count: (cb = null) ->
-        q = @newQuery().select(sql.count(1))
-        return @db.bindOrCall(q, 'scalar', cb)
+    count: (cb = null) -> @newSelect().select(sql.count(1)).tryCall('scalar', cb)
 
-    all: (cb) ->
-        q = @newQuery()
-        return @db.bindOrCall(q, 'allObjects', cb)
+    all: (cb) -> @newSelect().tryCall('allObjects', cb)
 
-    newQuery: () -> sql.from(@sqlAlias).select(sql.star(@sqlAlias))
+    where: (clause, cb) ->
+
+    newSelect: () ->
+        q = new @selectClass(@)
+        return q.from(@sqlAlias).select(sql.star(@sqlAlias))
 
     merge: (data, cb) ->
         F.demandArray(data, 'data')
