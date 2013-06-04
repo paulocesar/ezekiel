@@ -7,8 +7,7 @@ queryBinder = require('./query-binder')
 class TableGateway
     constructor: (@db, @schema, @arProto) ->
 
-    sqlAlias: () -> @schema.many
-    toString: () -> "<TableGateway to #{@sqlAlias()}>"
+    toString: () -> "<TableGateway to #{@sqlAlias}>"
 
     newObject: (data) ->
         ar = Object.create(@arProto)
@@ -41,7 +40,7 @@ class TableGateway
     deleteOne: () -> @doOne(@_delete, arguments, 'delete')
 
     _delete: (predicate, cb) ->
-        s = sql.delete(@sqlAlias(), predicate)
+        s = sql.delete(@sqlAlias, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
     doOne: (fn, args, opName, queryArgument) ->
@@ -79,7 +78,7 @@ class TableGateway
 
         @schema.demandInsertable(values)
 
-        q = sql.insert(@sqlAlias(), values)
+        q = sql.insert(@sqlAlias, values)
         return @doOutputQuery(q, cb)
 
     upsertOne: (values, cb) ->
@@ -99,7 +98,7 @@ class TableGateway
             return @updateOne(values, cb)
 
         keyProperties = mergeKey.properties()
-        q = sql.upsert(@sqlAlias(), values, keyProperties)
+        q = sql.upsert(@sqlAlias, values, keyProperties)
         return @doOutputQuery(q, cb)
 
     doOutputQuery: (q, cb) ->
@@ -143,11 +142,11 @@ class TableGateway
         @_update(keyValues, cb, updateValues)
 
     _update: (predicate, cb, values) ->
-        s = sql.update(@sqlAlias(), values, predicate)
+        s = sql.update(@sqlAlias, values, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
     deleteMany: (predicate, cb) ->
-        s = sql.delete(@sqlAlias()).where(predicate)
+        s = sql.delete(@sqlAlias).where(predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
     count: (cb = null) ->
@@ -158,17 +157,21 @@ class TableGateway
         q = @newQuery()
         return @db.bindOrCall(q, 'allObjects', cb)
 
-    newQuery: () -> sql.from(@sqlAlias()).select(sql.star(@sqlAlias()))
+    newQuery: () -> sql.from(@sqlAlias).select(sql.star(@sqlAlias))
 
     merge: (data, cb) ->
         F.demandArray(data, 'data')
         cb(null) if _.isEmpty(data)
 
-        s = sql.merge(@sqlAlias()).using(data)
+        s = sql.merge(@sqlAlias).using(data)
         return @db.bindOrCall(s, 'noData', cb)
 
     bindError: (msg, cb) ->
         return cb(msg) if cb?
         return queryBinder.bindError(@, msg)
+
+Object.defineProperty(TableGateway::, "sqlAlias", {
+    get: () -> @schema.many
+})
     
 module.exports = TableGateway
