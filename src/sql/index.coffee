@@ -21,7 +21,7 @@ sql = {
 
     star: (table) ->
         if _.isString(table)
-            table = new SqlFullName(table)
+            table = new SqlFullName([ table ])
 
         return new SqlStar(table)
 }

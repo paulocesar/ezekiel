@@ -158,7 +158,7 @@ class TableGateway
         q = @newQuery()
         return @db.bindOrCall(q, 'allObjects', cb)
 
-    newQuery: () -> sql.from(@sqlAlias())
+    newQuery: () -> sql.from(@sqlAlias()).select(sql.star(@sqlAlias()))
 
     merge: (data, cb) ->
         F.demandArray(data, 'data')
