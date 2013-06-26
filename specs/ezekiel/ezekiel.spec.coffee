@@ -16,6 +16,8 @@ failConnection = {
 conn = h.defaultDbConfig
 fn = () ->
 
+fighter = null
+
 specRoot = path.resolve(__dirname, '..')
 
 badConfigs = [
@@ -47,8 +49,8 @@ describe 'Ezekiel', () ->
 
         ezekiel.connect config, (err, db) ->
             return done(err) if err
-            f = db.fighter( { lastName: 'Machida', firstName: 'Lyoto' })
-            f.sayHi().should.eql("Hi, my name is Lyoto Machida")
+            fighter = db.fighter( { lastName: 'Machida', firstName: 'Lyoto' })
+            fighter.sayHi().should.eql("Hi, my name is Lyoto Machida")
             h.assertLoadedSchema(db.schema, done)
 
     it 'sends error if require path is wrong', (done) ->
@@ -57,3 +59,16 @@ describe 'Ezekiel', () ->
         ezekiel.connect config, (err, db) ->
             err.should.match(/ENOENT/)
             done()
+
+
+    it 'test async get property', (done) ->
+        fighter.fullName (fullName) ->
+            fullName.should.be.equal("Lyoto Machida")
+            done()
+
+    it 'test async set property', (done) ->
+        fighter.fullName { firstName: 'Anderson', lastName: 'Silva' }, (err) ->
+            fighter.sayHi().should.eql("Hi, my name is Anderson Silva")
+            done()
+            
+

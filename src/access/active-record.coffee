@@ -28,6 +28,8 @@ class ActiveRecord
             @_addColumnAccessor(c)
 
         @_persisted = @_changed = null
+        @_asyncProperties = {}
+
         @_n = 0
 
     # SHOULD: include id in toString()
@@ -42,6 +44,20 @@ class ActiveRecord
             get: () -> @get(key)
             set: (v) -> @set(key, v)
         })
+
+    loadAsyncProperties: (properties..., callback) ->
+
+    addAsyncProperty: (key, get, set) ->
+        F.demandGoodString(key, 'key')
+        
+        @_asyncProperties[key] = { get, set }
+        @[key] = (valueOrCallback, callback) ->
+            return @getAsync(key, valueOrCallback) if (!callback?)
+            @setAsync(key, valueOrCallback, callback)
+
+    getAsync: (key, callback) -> @_asyncProperties[key].get.call(@, callback)
+
+    setAsync: (key, value, callback) -> @_asyncProperties[key].set.call(@, value, callback)
 
     get: (key) -> @_changed[key] ? @_persisted[key]
       
