@@ -77,3 +77,14 @@ describe 'Async Properties', () ->
                 return done(err) if err
                 promotion.should.eql("Win a MAC PRO!")
                 done()
+    
+    it 'get next promotion', (done) ->
+        event.nextPromotion (err, nextPromotion) ->
+            return done(err) if err
+            nextPromotion.should.eql("Win a MAC PRO!")
+            done()
+
+    it 'try get next promotion, gets an error', (done) ->
+        newEvent.nextPromotion (err, nextPromotion) ->
+           err.should.match(/No data returned for query/)
+           done()
