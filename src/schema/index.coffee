@@ -78,7 +78,8 @@ jsTypes = {
     date:
         matchesType: _.isDate
         # MUST: beef date conversion way up
-        convert: (v) -> new Date(Date.parse(v.toString()))
+        convert: (v) ->
+            new Date(Date.parse(v.toString()))
         name: 'Date'
         numeric: false
 }

@@ -66,6 +66,7 @@ class TableGateway
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered
+                queryArgument = @schema.conversJsType(queryArgument)
                 return fn.call(@, keyValues, cb, queryArgument)
             else
                 e = ["Could not find a key in #{@schema} whose values are fully specified"
@@ -186,5 +187,5 @@ class TableGateway
 Object.defineProperty(TableGateway::, "sqlAlias", {
     get: () -> @schema.many
 })
-    
+
 module.exports = TableGateway

@@ -87,7 +87,7 @@ describe 'ActiveRecord', () ->
     it 'test send date in wrong format', (done) ->
         db.event 1, (err, o) ->
             return done(err) if err
-            o.date = new Date().toString()
+            o.date = new Date().getTime()
             o.persist (err) ->
                 return done(err) if err
                 done()

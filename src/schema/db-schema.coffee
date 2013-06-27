@@ -61,7 +61,7 @@ class DbSchema extends DbObject
         list = dict[property]
         for i in list
             table = @tablesByName[i.tableName]
-            
+
             # If parent is a view, then we don't have it, so bail out. MUST: handle views
             # in the future
             return unless table?
