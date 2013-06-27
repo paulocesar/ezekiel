@@ -1,5 +1,6 @@
 _ = require('underscore')
 F = require('functoids/src')
+async = require('async')
 
 { SqlToken } = sql = require('../sql')
 queryBinder = require('./query-binder')
@@ -46,14 +47,38 @@ class ActiveRecord
         })
 
     loadAsyncProperties: (properties..., callback) ->
-
+        tasks = {}
+        for property in properties
+            return callback("Invalid property #{property}") if !(@_asyncProperties[property]?)
+            do (property) =>
+                tasks[property] = (cb) => @getAsync(property, cb)
+        
+        async.series tasks, callback
+    
     addAsyncProperty: (key, get, set) ->
         F.demandGoodString(key, 'key')
         
         @_asyncProperties[key] = { get, set }
-        @[key] = (valueOrCallback, callback) ->
-            return @getAsync(key, valueOrCallback) if (!callback?)
-            @setAsync(key, valueOrCallback, callback)
+        @[key] = (value, callback) ->
+            if (_.isFunction(value) && !callback?)
+                callback = value
+                return @getAsync(key, callback)
+
+            @setAsync(key, value, callback)
+
+    setPersisting: (data, callback) ->
+        tasks = [ ]
+        for key, value of data
+            if (@_asyncProperties[key]?.set?)
+                do (key) =>
+                    tasks.push (cb) => @setAsync(key, value, cb)
+                continue
+
+            @[key] = value
+        
+        @persist (err) ->
+            return callback(err) if err
+            async.waterfall tasks, callback
 
     getAsync: (key, callback) -> @_asyncProperties[key].get.call(@, callback)
 

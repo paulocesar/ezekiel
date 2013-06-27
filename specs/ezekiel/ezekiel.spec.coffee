@@ -30,7 +30,6 @@ badConfigs = [
         /processSchema cannot be used/ ]
 ]
 
-
 describe 'Ezekiel', () ->
     it 'throws error on bad configurations', () ->
         for c in badConfigs
@@ -60,15 +59,39 @@ describe 'Ezekiel', () ->
             err.should.match(/ENOENT/)
             done()
 
-
     it 'test async get property', (done) ->
-        fighter.fullName (fullName) ->
+        fighter.fullName (err, fullName) ->
+            return done(err) if err
             fullName.should.be.equal("Lyoto Machida")
             done()
 
     it 'test async set property', (done) ->
-        fighter.fullName { firstName: 'Anderson', lastName: 'Silva' }, (err) ->
-            fighter.sayHi().should.eql("Hi, my name is Anderson Silva")
+        fighter.fullName { firstName: 'Junior', lastName: 'Cigano' }, (err) ->
+            return done(err) if err
+            fighter.sayHi().should.eql("Hi, my name is Junior Cigano")
             done()
             
+    it 'test loadAsyncProperties', (done) ->
+        fighter.loadAsyncProperties 'fullName', 'nextFight', (err, properties) ->
+            return done(err) if err
+            properties.fullName.should.eql("Junior Cigano")
+            properties.nextFight.should.eql("Tomorrow!")
+            done()
 
+    it 'set persisting', (done) ->
+        data =
+            dOB: new Date()
+            country: "Brazil"
+            heightInCm: 188
+            reachInCm: 197
+            weightInLb: 185
+            firstName: Math.random()
+            fullName:
+                firstName: 'Anderson'
+                lastName: "Silva (Cover)"
+
+        fighter.setPersisting data, (err) ->
+            return done(err) if (err)
+            fighter.firstName.should.be.eql('Anderson')
+            fighter.lastName.should.be.eql('Silva (Cover)')
+            done()
