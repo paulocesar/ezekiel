@@ -16,4 +16,6 @@ f = (proto, schema) ->
             return callback(err) if err
             callback(null, promotion.name)
 
+    proto.addAsyncProperty 'noSetterOrGetter'
+
 module.exports = f

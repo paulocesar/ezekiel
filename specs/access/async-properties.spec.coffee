@@ -84,6 +84,16 @@ describe 'Async Properties', () ->
             nextPromotion.should.eql("Win a MAC PRO!")
             done()
 
+    it 'try to set without a setter', (done) ->
+        event.nextPromotion 'Uh oh, i dont have a setter', (err) ->
+            err.should.eql("Set for nextPromotion not implemented")
+            done()
+
+    it 'try to get without a getter', (done) ->
+        event.noSetterOrGetter (err, value) ->
+            err.should.eql("Get for noSetterOrGetter not implemented")
+            done()
+
     it 'try get next promotion, gets an error', (done) ->
         newEvent.nextPromotion (err, nextPromotion) ->
            err.should.match(/No data returned for query/)

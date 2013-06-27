@@ -62,8 +62,10 @@ class ActiveRecord
         @[key] = (value, callback) ->
             if (_.isFunction(value) && !callback?)
                 callback = value
+                return callback("Get for #{key} not implemented") if (!get?)
                 return @getAsync(key, callback)
-
+            
+            return callback("Set for #{key} not implemented") if (!set?)
             @setAsync(key, value, callback)
 
     setPersisting: (data, callback) ->
