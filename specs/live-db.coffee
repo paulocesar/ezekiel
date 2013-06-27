@@ -19,17 +19,12 @@ cleanTestData = (cb) ->
     """
 
     formatter = new SqlFormatter(h.getCookedSchema())
-    for f in data.fighters
-        insert = sql.insert('fighters', f)
-        q += (formatter.format(insert) + " ")
 
-    for p in data.promotions
-        insert = sql.insert('promotions', p)
-        q += (formatter.format(insert) + " ")
-
-    for e in data.events
-        insert = sql.insert('events', e)
-        q += (formatter.format(insert) + " ")
+    tables = [ 'fighters', 'promotions', 'events' ]
+    for table in tables
+        for d in data[table]
+            insert = sql.insert(table, d)
+            q += (formatter.format(insert) + " ")
 
     h.liveDb.noData(q, cb)
 
