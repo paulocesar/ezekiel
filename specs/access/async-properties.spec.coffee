@@ -45,12 +45,12 @@ describe 'Async Properties', () ->
 
     it 'setPersisting', (done) ->
         data = {
-            name: "Change name event"
-            promotion: "Uh oh! No promotion"
+            name: "Change event name"
+            promotion: "Uh oh! Promotion is over!"
         }
         event.setPersisting data, (err) ->
             return done(err) if err
-            event.name.should.eql("Change name event")
+            event.name.should.eql("Change event name")
             event.promotion (err, promotion) ->
-                promotion.should.eql("Uh oh! No promotion")
+                promotion.should.eql("Uh oh! Promotion is over!")
                 done()
