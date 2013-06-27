@@ -4,7 +4,7 @@ ezekiel = h.requireSrc()
 should = require('should')
 path = require('path')
 
-db = event = null
+db = event = newEvent =  null
 specRoot = path.resolve(__dirname, '..')
 
 before (done) ->
@@ -53,4 +53,26 @@ describe 'Async Properties', () ->
             event.name.should.eql("Change event name")
             event.promotion (err, promotion) ->
                 promotion.should.eql("Uh oh! Promotion is over!")
+                done()
+
+    it 'init a new event', () ->
+        newEvent = db.event { name: 'Test event', date: new Date(), promotionId: 2 }
+    
+    it 'get promotion, async', (done) ->
+        newEvent.promotion (err, promotion) ->
+            return done(err) if err
+            promotion.should.eql(h.testData.promotions[1].name)
+            done()
+
+    it 'setPersisting', (done) ->
+        data = {
+            name: "Yeah, i change the name again"
+            promotion: "Win a MAC PRO!"
+        }
+        newEvent.setPersisting data, (err) ->
+            return done(err) if err
+            newEvent.id.should.be.eql(h.testData.events.length + 1)
+            newEvent.promotion (err, promotion) ->
+                return done(err) if err
+                promotion.should.eql("Win a MAC PRO!")
                 done()
