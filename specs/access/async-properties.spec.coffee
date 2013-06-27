@@ -66,12 +66,13 @@ describe 'Async Properties', () ->
 
     it 'setPersisting', (done) ->
         data = {
-            name: "Yeah, i change the name again"
+            name: "Yeah, I change the name again"
             promotion: "Win a MAC PRO!"
         }
         newEvent.setPersisting data, (err) ->
             return done(err) if err
             newEvent.id.should.be.eql(h.testData.events.length + 1)
+            newEvent.name.should.eql("Yeah, I change the name again")
             newEvent.promotion (err, promotion) ->
                 return done(err) if err
                 promotion.should.eql("Win a MAC PRO!")
