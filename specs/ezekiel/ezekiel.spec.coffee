@@ -16,8 +16,6 @@ failConnection = {
 conn = h.defaultDbConfig
 fn = () ->
 
-fighter = null
-
 specRoot = path.resolve(__dirname, '..')
 
 badConfigs = [
@@ -29,6 +27,7 @@ badConfigs = [
     [ { connection: conn, schema: false, processSchema: fn },
         /processSchema cannot be used/ ]
 ]
+
 
 describe 'Ezekiel', () ->
     it 'throws error on bad configurations', () ->
@@ -48,8 +47,8 @@ describe 'Ezekiel', () ->
 
         ezekiel.connect config, (err, db) ->
             return done(err) if err
-            fighter = db.fighter( { lastName: 'Machida', firstName: 'Lyoto' })
-            fighter.sayHi().should.eql("Hi, my name is Lyoto Machida")
+            f = db.fighter( { lastName: 'Machida', firstName: 'Lyoto' })
+            f.sayHi().should.eql("Hi, my name is Lyoto Machida")
             h.assertLoadedSchema(db.schema, done)
 
     it 'sends error if require path is wrong', (done) ->
@@ -57,41 +56,4 @@ describe 'Ezekiel', () ->
 
         ezekiel.connect config, (err, db) ->
             err.should.match(/ENOENT/)
-            done()
-
-    it 'test async get property', (done) ->
-        fighter.fullName (err, fullName) ->
-            return done(err) if err
-            fullName.should.be.equal("Lyoto Machida")
-            done()
-
-    it 'test async set property', (done) ->
-        fighter.fullName { firstName: 'Junior', lastName: 'Cigano' }, (err) ->
-            return done(err) if err
-            fighter.sayHi().should.eql("Hi, my name is Junior Cigano")
-            done()
-            
-    it 'test loadAsyncProperties', (done) ->
-        fighter.loadAsyncProperties 'fullName', 'nextFight', (err, properties) ->
-            return done(err) if err
-            properties.fullName.should.eql("Junior Cigano")
-            properties.nextFight.should.eql("Tomorrow!")
-            done()
-
-    it 'set persisting', (done) ->
-        data =
-            dOB: new Date()
-            country: "Brazil"
-            heightInCm: 188
-            reachInCm: 197
-            weightInLb: 185
-            firstName: Math.random()
-            fullName:
-                firstName: 'Anderson'
-                lastName: "Silva (Cover)"
-
-        fighter.setPersisting data, (err) ->
-            return done(err) if (err)
-            fighter.firstName.should.be.eql('Anderson')
-            fighter.lastName.should.be.eql('Silva (Cover)')
             done()
