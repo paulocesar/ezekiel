@@ -53,33 +53,6 @@ class DbObject
 #
 # The schema API however ALWAYS WORKS WITH NAMES to ensure sanity. Names are immutable.
 
-class JsTime
-    @padNumber: (number, l = 2) ->
-        r = String(number)
-        r = "0#{r}" while r.length < l
-        return r
-
-class JsDate
-    constructor: (@value) ->
-
-    toString: () ->
-        dt = new Date(@value.valueOf())
-        y = JsTime.padNumber(dt.getFullYear(),4)
-        m = JsTime.padNumber(dt.getMonth() + 1)
-        d = JsTime.padNumber(dt.getDate())
-        return "'#{y}-#{m}-#{d}'"
-
-class JsDateTime extends JsDate
-    toString: () ->
-        dt = new Date(@value.valueOf())
-        y = JsTime.padNumber(dt.getFullYear(),4)
-        m = JsTime.padNumber(dt.getMonth() + 1)
-        d = JsTime.padNumber(dt.getDate())
-        h = JsTime.padNumber(dt.getHours())
-        n = JsTime.padNumber(dt.getMinutes())
-        s = JsTime.padNumber(dt.getSeconds())
-        return "'#{y}-#{m}-#{d} #{h}:#{n}:#{s}'"
-
 jsTypes = {
     number:
         matchesType: _.isNumber
@@ -102,18 +75,17 @@ jsTypes = {
         numeric: false
         string: true
 
-    datetime:
+    date:
         matchesType: _.isDate
         # MUST: beef date conversion way up
-        convert: JsDateTime
+        convert: (v) -> new Date(Date.parse(v.toString()))
         name: 'Date'
         numeric: false
 }
 
-
 dbTypeToJsType = {
     varchar: 'string'
-    datetime: 'datetime'
+    datetime: 'date'
     int: 'number'
 }
 
