@@ -17,7 +17,6 @@ cleanTestData = (cb) ->
         DELETE Promotions
         DBCC CHECKIDENT('Promotions', RESEED, 0)
     """
-
     formatter = new SqlFormatter(h.getCookedSchema())
 
     tables = [ 'fighters', 'promotions', 'events' ]

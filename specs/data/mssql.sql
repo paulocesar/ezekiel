@@ -68,5 +68,6 @@ CREATE TABLE dbo.Rounds (
 
 CREATE TABLE dbo.Images (
     Id int NOT NULL IDENTITY(1,1) CONSTRAINT PK_Images PRIMARY KEY CLUSTERED,
+    ImageName varchar(100 NOT NULL,
     ImageFile image NOT NULL
 )
