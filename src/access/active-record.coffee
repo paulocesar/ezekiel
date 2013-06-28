@@ -51,7 +51,7 @@ class ActiveRecord
         for property in properties
             return callback("Invalid property #{property}") if !(@_asyncProperties[property]?)
             do (property) =>
-                tasks[property] = (cb) => @getAsync(property, cb)
+                tasks[property] = (data..., cb) => @getAsync(property, cb)
         
         async.series tasks, callback
     
@@ -73,7 +73,7 @@ class ActiveRecord
         for key, value of data
             if (@_asyncProperties[key]?.set?)
                 do (key) =>
-                    tasks.push (cb) => @setAsync(key, value, cb)
+                    tasks.push (data..., cb) => @setAsync(key, value, cb)
                 continue
 
             @[key] = value

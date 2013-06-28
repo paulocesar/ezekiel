@@ -75,7 +75,6 @@ class TableGateway
             F.throw("You must provide key values as arguments to #{opName}One()")
         
         queryArgument = @fromJS(queryArgument)
-
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered
