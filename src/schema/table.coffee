@@ -293,14 +293,6 @@ class Table extends DbObject
             return true if k.coveredBy(row)
         return false
 
-    conversJsType: (values) ->
-        for key, value of values
-            convert = @columnsByProperty[key]?.jsType?.convert
-            if convert && _.isFunction(convert)
-                values[key] = convert(value)
-
-        return values
-
     hasIdentity: () -> @some('isIdentity')
     hasReadOnly: () -> @some('isReadOnly')
     hasProperty: (p) -> p of @columnsByProperty

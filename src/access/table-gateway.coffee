@@ -56,17 +56,29 @@ class TableGateway
         s = sql.delete(@sqlAlias, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
+    fromJS: (values) ->
+        for key, value of values
+            property = @schema.columnsByProperty[key]
+            
+            Converter = property?.jsType.convert
+            continue if (!_.isFunction(Converter))
+
+            values[key] = new Converter(value)
+
+        return values
+
     doOne: (fn, args, opName, queryArgument) ->
         cb = F.lastIfFunction(args)
         keyValues = F.unwrapArgs(args, cb?)
 
         unless keyValues?
             F.throw("You must provide key values as arguments to #{opName}One()")
+        
+        queryArgument = @fromJS(queryArgument)
 
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered
-                queryArgument = @schema.conversJsType(queryArgument)
                 return fn.call(@, keyValues, cb, queryArgument)
             else
                 e = ["Could not find a key in #{@schema} whose values are fully specified"

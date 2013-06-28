@@ -53,6 +53,24 @@ class DbObject
 #
 # The schema API however ALWAYS WORKS WITH NAMES to ensure sanity. Names are immutable.
 
+class JsDate
+    padNumber = (number, l = 2) ->
+        r = String(number)
+        r = "0#{r}" while r.length < l
+        return r
+
+    constructor: (@value) ->
+
+    toString: () ->
+        dt = new Date(@value)
+        y = padNumber(dt.getFullYear(),4)
+        m = padNumber(dt.getMonth() + 1)
+        d = padNumber(dt.getDate())
+        h = padNumber(dt.getHours())
+        n = padNumber(dt.getMinutes())
+        s = padNumber(dt.getSeconds())
+        return "'#{y}-#{m}-#{d} #{h}:#{n}:#{s}'"
+
 jsTypes = {
     number:
         matchesType: _.isNumber
@@ -78,8 +96,7 @@ jsTypes = {
     date:
         matchesType: _.isDate
         # MUST: beef date conversion way up
-        convert: (v) ->
-            new Date(Date.parse(v.toString()))
+        convert: JsDate
         name: 'Date'
         numeric: false
 }
