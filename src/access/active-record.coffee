@@ -72,8 +72,8 @@ class ActiveRecord
     defineAsyncProperty: (key, property) ->
         F.demandGoodString(key, 'key')
         F.demandGoodObject(property, 'property')
-        
-        @_asyncProperties[key] = { get: property.get, set: property.set }
+    
+        @_asyncProperties[key] = property
 
         Object.defineProperty(@, key, {
             configurable: property.configurable?
