@@ -55,25 +55,12 @@ class ActiveRecord
         
         async.series tasks, callback
     
-    addAsyncProperty: (key, get, set) ->
-        F.demandGoodString(key, 'key')
-        
-        @_asyncProperties[key] = { get, set }
-        @[key] = (value, callback) ->
-            if (_.isFunction(value) && !callback?)
-                callback = value
-                return callback("Get for #{key} not implemented") if (!get?)
-                return @getAsync(key, callback)
-            
-            return callback("Set for #{key} not implemented") if (!set?)
-            @setAsync(key, value, callback)
-
     setPersisting: (data, callback) ->
         tasks = [ ]
         for key, value of data
             if (@_asyncProperties[key]?.set?)
                 do (key) =>
-                    tasks.push (data..., cb) => @setAsync(key, value, cb)
+                    tasks.push (data..., cb) => @[key](value, cb)
                 continue
 
             @[key] = value
@@ -82,9 +69,31 @@ class ActiveRecord
             return callback(err) if err
             async.waterfall tasks, callback
 
-    getAsync: (key, callback) -> @_asyncProperties[key].get.call(@, callback)
+    defineAsyncProperty: (key, property) ->
+        F.demandGoodString(key, 'key')
+        F.demandGoodObject(property, 'property')
+        
+        @_asyncProperties[key] = { get: property.get, set: property.set }
 
-    setAsync: (key, value, callback) -> @_asyncProperties[key].set.call(@, value, callback)
+        Object.defineProperty(@, key, {
+            configurable: property.configurable?
+            enumerable: property.enumerable?
+            writable: property.writable?
+
+            value: (value..., callback) ->
+                if _.isEmpty(value)
+                    return callback("Get for #{key} not implemented") if !(property.get?)
+                    return @getAsync(key, callback)
+
+                return callback("Set for #{key} not implemented") if !(property.set?)
+                return @setAsync(key, value, callback)
+        })
+
+    getAsync: (key, callback) ->
+        @_asyncProperties[key].get.call(@, callback)
+
+    setAsync: (key, value, callback) ->
+        @_asyncProperties[key].set.apply(@, value.concat [ callback ])
 
     get: (key) -> @_changed[key] ? @_persisted[key]
       
