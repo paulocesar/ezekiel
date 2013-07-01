@@ -77,9 +77,12 @@ class ActiveRecord
 
             @[key] = value
         
+        if !(@_isDirty())
+            return async.waterfall(tasks, callback)
+
         @persist (err) ->
             return callback(err) if err
-            async.waterfall tasks, callback
+            async.waterfall(tasks, callback)
 
     defineAsyncProperty: (key, property) ->
         F.demandGoodString(key, 'key')
