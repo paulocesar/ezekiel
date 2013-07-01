@@ -5,16 +5,6 @@ async = require('async')
 { SqlToken } = sql = require('../sql')
 queryBinder = require('./query-binder')
 
-removeBinaries = (values, columns, data = { }) ->
-    binaryTypes = [ 'image' ]
-
-    for key, value of values
-        property = columns[key]
-        data[key] = value if !(property.dbDataType in binaryTypes)
-
-    return data
-
-
 states = [
     {
         name: 'new'
@@ -23,9 +13,7 @@ states = [
     }
     {
         name: 'persisted'
-        persist: (cb) ->
-            persisted = removeBinaries(@_persisted, @_gw.schema.columnsByProperty)
-            @_gw.updateOne @_changed, persisted, @_makePersistHandler(cb)
+        persist: (cb) -> @_gw.updateOne @_changed, @_persisted, @_makePersistHandler(cb)
         destroy: (cb) -> @_gw.deleteOne @_persisted, @_makeDestroyHandler(cb)
     }
     {

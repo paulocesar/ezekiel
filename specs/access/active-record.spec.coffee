@@ -91,12 +91,3 @@ describe 'ActiveRecord', () ->
             o.persist (err) ->
                 return done(err) if err
                 done()
-
-
-    it 'test persist image', (done) ->
-        db.image 1, (err, o) ->
-            return done(err) if err
-            o.imageName = Math.random()
-            o.persist (err) ->
-                return done(err) if err
-                done()
