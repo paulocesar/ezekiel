@@ -47,6 +47,9 @@ class ActiveRecord
         })
 
     loadAsyncProperties: (properties..., callback) ->
+        F.demandGoodArray(properties, 'properties')
+        F.demandFunction(callback, 'callback')
+
         tasks = {}
         for property in properties
             return callback("Invalid property #{property}") if !(@_asyncProperties[property]?)
@@ -56,6 +59,9 @@ class ActiveRecord
         async.series tasks, callback
     
     setPersisting: (data, callback) ->
+        F.demandGoodObject(data, 'data')
+        F.demandFunction(callback, 'callback')
+
         tasks = [ ]
         for key, value of data
             if (@_asyncProperties[key]?.set?)
@@ -83,20 +89,27 @@ class ActiveRecord
             enumerable: property.enumerable?
             writable: property.writable?
 
-            value: (value..., callback) ->
-                if _.isEmpty(value)
+            value: (values..., callback) ->
+                if _.isEmpty(values)
                     return callback("Get for #{key} not implemented") if !(property.get?)
                     return @getAsync(key, callback)
 
                 return callback("Set for #{key} not implemented") if !(property.set?)
-                return @setAsync(key, value, callback)
+                return @setAsync(key, values, callback)
         })
 
     getAsync: (key, callback) ->
+        F.demandGoodString(key, 'key')
+        F.demandFunction(callback, 'callback')
+
         @_asyncProperties[key].get.call(@, callback)
 
-    setAsync: (key, value, callback) ->
-        @_asyncProperties[key].set.apply(@, value.concat [ callback ])
+    setAsync: (key, values, callback) ->
+        F.demandGoodString(key, 'key')
+        F.demandGoodArray(values, 'valeus')
+        F.demandFunction(callback, 'callback')
+
+        @_asyncProperties[key].set.apply(@, values.concat [ callback ])
 
     get: (key) -> @_changed[key] ? @_persisted[key]
       
