@@ -60,7 +60,7 @@ class TableGateway
         for key, value of values
             property = @schema.columnsByProperty[key]
             
-            converter = property?.jsType.convert
+            converter = property?.jsType?.convert
             continue if (!_.isFunction(converter))
 
             values[key] = converter(value)
