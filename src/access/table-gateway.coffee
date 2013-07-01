@@ -67,16 +67,6 @@ class TableGateway
 
         return values
 
-    removeBinaries: (values) ->
-        binaryTypes = [ 'image' ]
-
-        for key, value of values[0]
-            property = @schema.columnsByProperty[key]
-            if (property.dbDataType in binaryTypes)
-                delete values[0][key]
-
-        return values
-
     doOne: (fn, args, opName, queryArgument) ->
         cb = F.lastIfFunction(args)
         keyValues = F.unwrapArgs(args, cb?)
@@ -85,7 +75,6 @@ class TableGateway
             F.throw("You must provide key values as arguments to #{opName}One()")
         
         queryArgument = @fromJS(queryArgument)
-        args = @removeBinaries(args)
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
             if covered

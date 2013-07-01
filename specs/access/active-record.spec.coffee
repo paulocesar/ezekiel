@@ -96,7 +96,7 @@ describe 'ActiveRecord', () ->
     it 'test persist image', (done) ->
         db.image 1, (err, o) ->
             return done(err) if err
-            o.imageName = "OhLord"
+            o.imageName = Math.random()
             o.persist (err) ->
                 return done(err) if err
                 done()
