@@ -71,7 +71,7 @@ class ActiveRecord
         tasks = [ ]
         for key, value of data
             if (@_asyncProperties[key]?.set?)
-                do (key) =>
+                do (key, value) =>
                     tasks.push (data..., cb) => @[key](value, cb)
                 continue
 
