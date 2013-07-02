@@ -91,10 +91,10 @@ class ActiveRecord
 
             value: (values..., callback) ->
                 if _.isEmpty(values)
-                    return callback("Get for #{key} not implemented") if !(property.get?)
+                    return callback("Get for #{key} not implemented") if !_.isFunction(property.get)
                     return @getAsync(key, callback)
 
-                return callback("Set for #{key} not implemented") if !(property.set?)
+                return callback("Set for #{key} not implemented") if !_.isFunction(property.set)
                 return @setAsync(key, values, callback)
         })
 
