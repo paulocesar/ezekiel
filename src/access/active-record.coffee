@@ -85,9 +85,9 @@ class ActiveRecord
         @_asyncProperties[key] = property
 
         Object.defineProperty(@, key, {
-            configurable: property.configurable?
-            enumerable: property.enumerable?
-            writable: property.writable?
+            configurable: property.configurable ? false
+            enumerable: property.enumerable ? false
+            writable: property.writable ? false
 
             value: (values..., callback) ->
                 if _.isEmpty(values)
