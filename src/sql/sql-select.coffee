@@ -35,7 +35,13 @@ class SqlSelect extends SqlStatement
     addFrom: (table, a) -> a.push(table)
 
     addColumns: (columns...) ->
-        @addColumn(col) for col in columns
+        for col in columns
+            if (_.isArray(col))
+                @addColumn.apply(@, col)
+                continue
+
+            @addColumn(col)
+
         return @
 
     addColumn: (columns...) ->
