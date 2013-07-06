@@ -59,7 +59,7 @@ class TableGateway
     fromJS: (values) ->
         for key, value of values
             property = @schema.columnsByProperty[key]
-            
+
             converter = property?.jsType?.convert
             continue if (!_.isFunction(converter))
 
@@ -73,7 +73,7 @@ class TableGateway
 
         unless keyValues?
             F.throw("You must provide key values as arguments to #{opName}One()")
-        
+
         queryArgument = @fromJS(queryArgument)
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)
@@ -177,6 +177,7 @@ class TableGateway
     count: (cb = null) -> @newSelect().select(sql.count(1)).tryCall('scalar', cb)
 
     all: (cb) -> @newSelect().tryCall('allObjects', cb)
+    allRows: (cb) -> @newSelect().tryCall('allRows', cb)
 
     where: (clause, cb) -> @newSelect().where(clause).tryCall('allObjects', cb)
 
