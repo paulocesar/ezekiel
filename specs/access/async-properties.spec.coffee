@@ -86,12 +86,12 @@ describe 'Async Properties', () ->
 
     it 'try to set without a setter', (done) ->
         event.nextPromotion 'Uh oh, i dont have a setter', (err) ->
-            err.should.eql("Set for nextPromotion not implemented")
+            err.should.eql("Setter for nextPromotion not implemented")
             done()
 
     it 'try to get without a getter', (done) ->
         event.noSetterOrGetter (err, value) ->
-            err.should.eql("Get for noSetterOrGetter not implemented")
+            err.should.eql("Getter for noSetterOrGetter not implemented")
             done()
 
     it 'try get next promotion, gets an error', (done) ->

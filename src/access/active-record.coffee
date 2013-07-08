@@ -90,11 +90,7 @@ class ActiveRecord
             writable: property.writable ? false
 
             value: (values..., callback) ->
-                if _.isEmpty(values)
-                    return callback("Get for #{key} not implemented") if !_.isFunction(property.get)
-                    return @getAsync(key, callback)
-
-                return callback("Set for #{key} not implemented") if !_.isFunction(property.set)
+                return @getAsync(key, callback) if _.isEmpty(values)
                 return @setAsync(key, values, callback)
         })
 
@@ -102,12 +98,18 @@ class ActiveRecord
         F.demandGoodString(key, 'key')
         F.demandFunction(callback, 'callback')
 
+        if !_.isFunction(@_asyncProperties[key].get)
+            return callback("Getter for #{key} not implemented")
+
         @_asyncProperties[key].get.call(@, callback)
 
     setAsync: (key, values, callback) ->
         F.demandGoodString(key, 'key')
         F.demandGoodArray(values, 'valeus')
         F.demandFunction(callback, 'callback')
+
+        if !_.isFunction(@_asyncProperties[key].set)
+            return callback("Setter for #{key} not implemented")
 
         @_asyncProperties[key].set.apply(@, values.concat [ callback ])
 
