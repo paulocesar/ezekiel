@@ -83,3 +83,11 @@ describe 'ActiveRecord', () ->
                 return done(err) if err
                 o._stateName().should.eql('destroyed')
                 assertCount cntFighters - 1, done
+
+    it 'test send date with directly format', (done) ->
+        db.event 1, (err, o) ->
+            return done(err) if err
+            o.date = "10/10/2013 23:11:12"
+            o.persist (err) ->
+                return done(err) if err
+                done()

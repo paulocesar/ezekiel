@@ -83,7 +83,6 @@ jsTypes = {
         numeric: false
 }
 
-
 dbTypeToJsType = {
     varchar: 'string'
     datetime: 'date'

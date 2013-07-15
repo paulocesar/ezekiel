@@ -1,5 +1,6 @@
 _ = require('underscore')
 F = require('functoids/src')
+async = require('async')
 
 { SqlToken } = sql = require('../sql')
 queryBinder = require('./query-binder')
@@ -28,6 +29,8 @@ class ActiveRecord
             @_addColumnAccessor(c)
 
         @_persisted = @_changed = null
+        @_asyncProperties = {}
+
         @_n = 0
 
     # SHOULD: include id in toString()
@@ -42,6 +45,73 @@ class ActiveRecord
             get: () -> @get(key)
             set: (v) -> @set(key, v)
         })
+
+    loadAsyncProperties: (properties..., callback) ->
+        F.demandGoodArray(properties, 'properties')
+        F.demandFunction(callback, 'callback')
+
+        tasks = {}
+        for property in properties
+            return callback("Invalid property #{property}") if !(@_asyncProperties[property]?)
+            do (property) =>
+                tasks[property] = (data..., cb) => @getAsync(property, cb)
+        
+        async.series tasks, callback
+    
+    setPersisting: (data, callback) ->
+        F.demandGoodObject(data, 'data')
+        F.demandFunction(callback, 'callback')
+
+        tasks = [ ]
+        for key, value of data
+            if (@_asyncProperties[key]?.set?)
+                do (key, value) =>
+                    tasks.push (data..., cb) => @[key](value, cb)
+                continue
+
+            @[key] = value
+        
+        if !(@_isDirty())
+            return async.waterfall(tasks, callback)
+
+        @persist (err) ->
+            return callback(err) if err
+            async.waterfall(tasks, callback)
+
+    defineAsyncProperty: (key, property) ->
+        F.demandGoodString(key, 'key')
+        F.demandGoodObject(property, 'property')
+    
+        @_asyncProperties[key] = property
+
+        Object.defineProperty(@, key, {
+            configurable: property.configurable ? false
+            enumerable: property.enumerable ? false
+            writable: property.writable ? false
+
+            value: (values..., callback) ->
+                return @getAsync(key, callback) if _.isEmpty(values)
+                return @setAsync(key, values, callback)
+        })
+
+    getAsync: (key, callback) ->
+        F.demandGoodString(key, 'key')
+        F.demandFunction(callback, 'callback')
+
+        if !_.isFunction(@_asyncProperties[key].get)
+            return callback("Getter for #{key} not implemented")
+
+        @_asyncProperties[key].get.call(@, callback)
+
+    setAsync: (key, values, callback) ->
+        F.demandGoodString(key, 'key')
+        F.demandGoodArray(values, 'valeus')
+        F.demandFunction(callback, 'callback')
+
+        if !_.isFunction(@_asyncProperties[key].set)
+            return callback("Setter for #{key} not implemented")
+
+        @_asyncProperties[key].set.apply(@, values.concat [ callback ])
 
     get: (key) -> @_changed[key] ? @_persisted[key]
       
