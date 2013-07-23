@@ -20,6 +20,7 @@ operatorAliases = {
     endsWith: 'LIKE'
     equals: '='
     '!=': '<>'
+    notIn: 'NOT IN'
 }
 
 class SqlFormatter
@@ -191,7 +192,7 @@ class SqlFormatter
         sqlOp = operatorAliases[op] ? op.toUpperCase()
         
         switch op
-            when 'in' then r = "(#{@f(right)})"
+            when 'in', 'notIn' then r = "(#{@f(right)})"
             when 'between' then r = "#{@f(right[0])} AND #{@f(right[1])}"
             when 'contains'
                 r = @_doPatternMatch(right, '%', '%')
