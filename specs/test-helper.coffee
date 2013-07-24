@@ -10,7 +10,6 @@ testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
 requireSrc = (pathToFile) -> require(path.resolve(sourceFolder, pathToFile))
 
-ezekiel = requireSrc()
 sql = requireSrc('sql')
 SqlFormatter = requireSrc('dialects/sql-formatter')
 Database = requireSrc('access/database')

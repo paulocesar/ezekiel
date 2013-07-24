@@ -10,12 +10,14 @@ describe('SQL Operators', () ->
             .or(sql.equals('lastName', 'Potter'))
             .or(sql.in('lastName', ['Snape', 'Dumbledore']))
             .or(sql.like('firstName', '%agor%'))
+            .and(sql.notIn('firstName', ['foo', 'bar']))
 
 
-        e = "SELECT * FROM [customers] WHERE ([firstName] LIKE 'Bil%' OR " +
+        e = "SELECT * FROM [customers] WHERE (([firstName] LIKE 'Bil%' OR " +
             "[lastName] LIKE '%aggins' OR [firstName] LIKE '%andal%' OR " +
             "[lastName] = 'Potter' OR [lastName] IN ('Snape', 'Dumbledore') OR " +
-            "[firstName] LIKE '%agor%')"
+            "[firstName] LIKE '%agor%') AND " +
+            "[firstName] NOT IN ('foo', 'bar'))"
 
         h.assertSql(q, e)
 

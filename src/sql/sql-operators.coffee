@@ -13,7 +13,7 @@ addOps = (fn, names...) ->
         sql[n] = fn(n)
 
 #binary logical
-addOps(newBinaryOp, 'between', 'contains', 'endsWith', 'equals', 'in', 'like', 'startsWith')
+addOps(newBinaryOp, 'between', 'contains', 'endsWith', 'equals', 'in', 'notIn', 'like', 'startsWith')
 
 #n-ary logical
 addOps(newNaryOp, 'isGood', 'isNotNull', 'isntNull', 'isNull')
