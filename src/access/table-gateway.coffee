@@ -174,7 +174,12 @@ class TableGateway
         s = sql.delete(@sqlAlias).where(predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
-    count: (cb = null) -> @newSelect().select(sql.count(1)).tryCall('scalar', cb)
+    count: (cb) -> @newSelect().select(sql.count(1)).tryCall('scalar', cb)
+
+    # SHOULD: add all SQL unary aggregation
+    max: (column, cb) ->
+        F.demandNotNil(column, "column")
+        @newSelect().select(sql.max(column)).tryCall('scalar', cb)
 
     all: (cb) -> @newSelect().tryCall('allObjects', cb)
     allRows: (cb) -> @newSelect().tryCall('allRows', cb)
