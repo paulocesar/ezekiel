@@ -29,7 +29,8 @@ class TediousAdapter
         conn = new Connection(@config)
         conn.on('connect', (err) =>
             if err?
-                callback(err)
+                # node-pool breaks if you send only err, must send null
+                callback(err, null)
             else
                 # MUST: find a real solution instead of this godawful workaround
                 set = 'SET ANSI_PADDING ON SET ANSI_WARNINGS ON ' +
