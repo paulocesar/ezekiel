@@ -488,32 +488,22 @@ class SqlFormatter
         ret += "VALUES (#{values.join(', ')})"
 
     update: (stmt) ->
-        #names = []
-        #values = []
-        #@fillNamesAndValues(stmt.values, names, values)
+        targetTable = @_doTargetTable(stmt.targetTable)
 
-        #ret = [
-            #"UPDATE #{@_doTargetTable(stmt.targetTable)} SET "
-            #("#{names[i]} = #{values[i]}" for i in names).join(", ")
-            #@where(stmt)
-        #]
-
-        #return ret.join('')
-
-        ret = "UPDATE #{@_doTargetTable(stmt.targetTable)} SET "
-
+        names = []
         values = []
-        for k, v of stmt.values
-            c = @_doInsertUpdateColumn(k)
-            continue unless c
-            values.push("#{c} = #{@f(v)}")
+        @fillNamesAndValues(stmt.values, names, values)
 
-        ret += values.join(', ')
+        ret = [
+            "UPDATE #{targetTable} SET "
+            ("#{name} = #{values[i]}" for name, i in names).join(", ")
+            @where(stmt)
+        ]
 
-        ret += @where(stmt)
-        return ret
+        return ret.join('')
 
     upsert: (stmt) ->
+        targetTable = @_doTargetTable(stmt.targetTable)
         names = []
         values = []
         @fillNamesAndValues(stmt.values, names, values)
@@ -524,7 +514,7 @@ class SqlFormatter
         updates = (eq(c) for c in names when !_.contains(onColumns, c)).join(", ")
 
         ret = [
-            "MERGE #{@_doTargetTable(stmt.targetTable)} AS target"
+            "MERGE #{targetTable} AS target"
             "USING (SELECT " + values.join(', ') + ")"
             "AS source (" + names.join(', ') + ")"
             "ON (#{onClauses})"
