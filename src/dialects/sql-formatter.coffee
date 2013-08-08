@@ -471,21 +471,22 @@ class SqlFormatter
         return @_doToken(token)
 
     insert: (stmt) ->
-        ret = "INSERT #{@_doTargetTable(stmt.targetTable)}"
+        targetTable = @_doTargetTable(stmt.targetTable)
+
         names = []
         values = []
-        for k, v of stmt.values
-            c = @_doInsertUpdateColumn(k)
-            continue unless c
-            names.push(c)
-            values.push(@f(v))
+        @fillNamesAndValues(stmt.values, names, values)
 
-        ret += " (#{names.join(', ')}) "
-        if stmt.outputColumns?
-            outputs = (@doOutputColumn(o, 'inserted') for o in [].concat(stmt.outputColumns))
-            ret += "OUTPUT #{outputs.join(', ')} "
+        ret = [
+            "INSERT #{targetTable}"
+            "(" + names.join(", ") + ")"
+        ]
 
-        ret += "VALUES (#{values.join(', ')})"
+        @addOutputColumns(ret, stmt.outputColumns)
+
+        ret.push("VALUES (" + values.join(", ") + ")")
+
+        return ret.join(' ')
 
     update: (stmt) ->
         targetTable = @_doTargetTable(stmt.targetTable)
