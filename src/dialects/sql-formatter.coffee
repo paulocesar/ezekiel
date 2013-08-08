@@ -1,6 +1,7 @@
 _ = require('underscore')
 F = require('functoids/src')
 sql = require('../sql')
+schemer = require('../schema')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 
 rgxParseName = ///
@@ -122,16 +123,6 @@ class SqlFormatter
         atom = F.firstOrSelf(c)
         alias = F.secondOrNull(c)
         t = @tokenizeColumn(atom)
-        return @doAliasedToken(t, alias)
-
-    doOutputColumn: (output, defaultPrefix) ->
-        atom = F.firstOrSelf(output)
-        t = @tokenizeColumn(atom, @findOutputColumnSchema)
-
-        if atom != t && t instanceof SqlFullName
-            t.setDefaultPrefix(defaultPrefix)
-
-        alias = F.secondOrNull(output)
         return @doAliasedToken(t, alias)
 
     doNameList: (names, separator = ', ') ->
@@ -360,13 +351,6 @@ class SqlFormatter
             if column?
                 return column
 
-    findOutputColumnSchema: (token) ->
-        unless @targetSchema? && token instanceof SqlFullName
-            return
-
-        if token.prefix() in ['inserted', 'deleted', null]
-            token._schema = @targetSchema.columnsByProperty[token.tip()]
-
     _addSources: (a, type) ->
         for o in a
             s = if o instanceof type then o else new type(o)
@@ -482,9 +466,13 @@ class SqlFormatter
             "(" + names.join(", ") + ")"
         ]
 
-        @addOutputColumns(ret, stmt.outputColumns)
+        output = @addOutputColumns(ret, stmt.outputColumns)
+        if output?
+            ret.unshift(output.table)
+            ret.push(output.clause)
 
         ret.push("VALUES (" + values.join(", ") + ")")
+        ret.push(output.select) if output?
 
         return ret.join(' ')
 
@@ -526,8 +514,15 @@ class SqlFormatter
             "  VALUES (" + values.join(", ") + ")"
         ]
 
-        @addOutputColumns(ret, stmt.outputColumns)
+        output = @addOutputColumns(ret, stmt.outputColumns)
+        if output?
+            ret.unshift(output.table)
+            ret.push(output.clause)
+
         @addSemicolon(ret)
+
+        ret.push(output.select) if output?
+
         return ret.join('\n')
 
     addSemicolon: (a) ->
@@ -537,9 +532,33 @@ class SqlFormatter
     addOutputColumns: (a, outputColumns) ->
         F.demandGoodArray(a, 'a')
         return unless outputColumns?
-        
-        outputs = (@doOutputColumn(o, 'inserted') for o in [].concat(outputColumns))
-        a.push("OUTPUT #{outputs.join(', ')}")
+
+        unless @targetSchema?
+            F.throw("You must have a target table schema to use output columns")
+       
+        columns = [].concat(outputColumns)
+        tokens = []
+        for columnAlias in columns
+            columnSchema = @targetSchema.columnsByProperty[columnAlias]
+            unless columnSchema?
+                F.throw("Could not find schema for output column with alias #{columnAlias}."
+                    "Each output column must be backed by a column schema.")
+
+            t = sql.name([columnSchema.name])
+            t._schema = columnSchema
+
+            tokens.push(t)
+
+        tableName = @nameTableVariable("Outputs")
+        tableVariable = @createTableForColumns(tableName, (t._schema for t in tokens))
+
+        outputClause = "OUTPUT " + ("inserted." + @_doToken(t) for t in tokens).join(", ") +
+            " INTO #{tableName}"
+
+        selectClause = "SELECT " + (@doAliasedToken(t) for t in tokens).join(", ") +
+            " FROM #{tableName}"
+
+        return {table: tableVariable, clause: outputClause, select: selectClause}
 
     fillNamesAndValues: (data, names, values) ->
         for k, v of data

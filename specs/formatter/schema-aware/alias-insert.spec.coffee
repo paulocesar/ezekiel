@@ -14,13 +14,11 @@ describe 'SqlInsert with aliased schema', () ->
         h.assertAlias(s, e)
 
 
-    it 'does proper aliases in OUTPUT clause', ->
-        q = sql.insert('fighters', { lastName: 'Liddell' })
-            .output("inserted.id", "inserted.lastName", "WeirdColumn",
-                sql.name(['FullSqlName']))
+    it 'requires schema for output Columns', ->
+        fn = () ->
+            q = sql.insert('fighters', { lastName: 'Liddell' })
+                .output("id", "lastName", "WeirdColumn")
 
-        e = "INSERT [Fighters] ([LastName]) OUTPUT [inserted].[Id] as [id], " +
-            "[inserted].[LastName] as [lastName], [inserted].[WeirdColumn], " +
-            "[FullSqlName] VALUES ('Liddell')"
+            h.assertAlias(q, "")
 
-        h.assertAlias(q, e)
+        fn.should.throw(/Could not find schema for output column/)

@@ -1,4 +1,5 @@
 _ = require('underscore')
+F = require('functoids/src')
 sql = require('../sql')
 { SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
 SqlFormatter = require('./sql-formatter')
@@ -34,6 +35,17 @@ schema = {
 
         return lines.join('\n')
 
+    createTableForColumns: (tableName, columns) ->
+        F.demandGoodString(tableName, "tableName")
+        F.demandGoodArray(columns, "columns")
+
+        lines = (@defineColumn(c) for c in columns)
+
+        lines.unshift("DECLARE #{tableName} TABLE (")
+        lines.push(")")
+
+        return lines.join("\n")
+
     defineColumn: (c) ->
         throw new Error('defineColumn: you must provide a column') unless c?
 
@@ -46,8 +58,12 @@ schema = {
         return "#{@delimit(c.name)} #{type} #{nullable}"
 
     nameTempTable: (baseName) ->
-        throw new Error('nameTempTable: you must provide a baseName') unless baseName?
+        F.demandGoodString(baseName, "baseName")
         return '#' + baseName
+
+    nameTableVariable: (baseName) ->
+        F.demandGoodString(baseName, "baseName")
+        return '@' + baseName
 }
 
 _.extend(SqlFormatter.prototype, schema)
