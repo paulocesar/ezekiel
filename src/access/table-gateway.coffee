@@ -56,6 +56,9 @@ class TableGateway
         s = sql.delete(@sqlAlias, predicate)
         return @db.bindOrCall(s, 'noData', cb)
 
+    # SHOULD: rename to fromJson
+    # MUST: handle null and undefined properly
+    # MUST: handle absence of converter properly
     fromJS: (values) ->
         for key, value of values
             property = @schema.columnsByProperty[key]
@@ -74,6 +77,8 @@ class TableGateway
         unless keyValues?
             F.throw("You must provide key values as arguments to #{opName}One()")
 
+        # MUST: think about usage and whether this is a good place to call fromJson()
+        # it might be better to let the adapter / formatter worry about this
         queryArgument = @fromJS(queryArgument)
         if _.isObject(keyValues)
             covered = @schema.coversSomeKey(keyValues)

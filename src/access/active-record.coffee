@@ -72,6 +72,8 @@ class ActiveRecord
             @[key] = value
         
         if !(@_isDirty())
+            # MUST: use series instead of waterfall, remove data... from callback
+            # definition
             return async.waterfall(tasks, callback)
 
         @persist (err) ->
@@ -84,6 +86,9 @@ class ActiveRecord
     
         @_asyncProperties[key] = property
 
+        # SHOULD: probably remove Object.defineProperty, I don't think we need the async property as
+        # an actual JS property
+        # SHOULD: demand a getter
         Object.defineProperty(@, key, {
             configurable: property.configurable ? false
             enumerable: property.enumerable ? false
@@ -94,6 +99,7 @@ class ActiveRecord
                 return @setAsync(key, values, callback)
         })
 
+    # SHOULD: merge getAsync() and get()
     getAsync: (key, callback) ->
         F.demandGoodString(key, 'key')
         F.demandFunction(callback, 'callback')
@@ -123,6 +129,7 @@ class ActiveRecord
       @_changed[key] = value
       return @
 
+    # SHOULD: handle async properties here
     setMany: (o) ->
       @set(k, v) for k, v of o
       return @
