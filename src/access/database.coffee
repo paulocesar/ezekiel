@@ -157,6 +157,15 @@ class Database
         }
         @execute(query, opt, callback)
 
+    dictionary: (query, callback) ->
+        dict = {}
+        opt = {
+            rowShape: 'array'
+            onRow: (row) -> dict[row[0]] = row[1]
+            onDone: () -> callback(null, dict)
+        }
+        @execute(query, opt, callback)
+
     allRows: (query, callback) ->
         opt = { onAllRows: (rows) -> callback(null, rows) }
         @execute(query, opt, callback)
