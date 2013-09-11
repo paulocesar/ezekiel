@@ -12,6 +12,7 @@ boundFunctions = {
     oneObject: (cb) -> @db.oneObject(@, @gw.sqlAlias, cb)
     allObjects: (cb) -> @db.allObjects(@, @gw.sqlAlias, cb)
     array: (cb) -> @db.array(@, cb)
+    dictionary: (cb) -> @db.dictionary(@, cb)
 }
 
 class BoundSelect extends SqlSelect
