@@ -8,7 +8,7 @@ should = require('should')
 
 testConfig = require('./config.json')
 sourceFolder = path.resolve(__dirname, '../src')
-requireSrc = (pathToFile) -> require(path.resolve(sourceFolder, pathToFile))
+requireSrc = (pathToFile = ".") -> require(path.resolve(sourceFolder, pathToFile))
 
 sql = requireSrc('sql')
 SqlFormatter = requireSrc('dialects/sql-formatter')
