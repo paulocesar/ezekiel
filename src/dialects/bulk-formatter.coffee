@@ -6,6 +6,9 @@ SqlFormatter = require('./sql-formatter')
 schemer = require('../schema')
 
 bulk = {
+    # SHOULD: add an option for handling null and missing values in the source
+    # JS data. Should the DB be updated with NULLs, or should the null values be
+    # ignored?
     merge: (merge) ->
         unless merge?.targetTable?
             throw new Error('you must provide a targetTable')
@@ -58,7 +61,7 @@ bulk = {
 
         for r in rows
             for c in columns
-                cntValuesByColumn[c.property]++ if c.property of r
+                cntValuesByColumn[c.property]++ if r[c.property]?
 
         tempTableColumns = []
         for c in columns
