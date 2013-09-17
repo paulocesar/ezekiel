@@ -10,7 +10,8 @@
         "coffee-script": "",
         "async": "",
         "generic-pool": "",
-        "tedious": ""
+        "tedious": "",
+        "mysql": ""
     },
     "devDependencies": {
         "mocha": "",
