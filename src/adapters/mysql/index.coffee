@@ -37,7 +37,7 @@ class MysqlAdapter
 
             doRow = options.onRow?
             doAllRows = options.onAllRows?
-            rows = [] if doAllRows
+            rows = []
             foundRow = false
 
             if(doRow || doAllRows)
@@ -91,6 +91,19 @@ class MysqlAdapter
                 onAllRows: (row) -> callback(row[0]?)
             }
         )
+
+    createDatabase: (name, callback) ->
+        @execute(
+            {
+                master: true
+                stmt: "CREATE DATABASE IF NOT EXISTS #{name}"
+                onDone: (dn) -> callback(dn)
+            }
+        )
+
+
+    dropDatabase: (name, callback) ->
+        callback(false)
 
 
 module.exports = MysqlAdapter
