@@ -38,11 +38,9 @@ class MysqlAdapter
             doRow = options.onRow?
             doAllRows = options.onAllRows?
             rows = []
-            foundRow = false
 
             if(doRow || doAllRows)
                 stmt.on('result', (row) ->
-                    foundRow = true
                     rowShape = options.rowShape ? 'object'
 
                     # TODO: review parse e _typeCast
@@ -101,9 +99,39 @@ class MysqlAdapter
             }
         )
 
-
     dropDatabase: (name, callback) ->
-        callback(false)
+        self = @
+        @_killDatabaseProcesses(name, (done) ->
+            self.execute(
+                {
+                    master: true
+                    stmt: "DROP DATABASE IF EXISTS #{name}"
+                    onDone: (dn) -> callback(dn)   
+                }
+            )
+        )
+
+    _killDatabaseProcesses: (name, callback) ->
+        self = @
+        @execute(
+            {
+                master: true
+                rowShape: 'array'
+                stmt: "SELECT ID FROM INFORMATION_SCHEMA.PROCESSLIST WHERE DB LIKE '#{name}'"
+                onRow: (row) -> self._killProcess(row[0], callback) if row
+                onDone: (done) -> callback(done)
+            }
+        )
+
+    _killProcess: (id, callback) ->
+        engine.execute(
+            {
+                master: true
+                stmt: "KILL #{id}"
+                onDone: (done) -> callback(done)
+            }
+        )
+
 
 
 module.exports = MysqlAdapter

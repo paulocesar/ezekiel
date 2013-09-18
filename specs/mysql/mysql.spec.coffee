@@ -1,4 +1,5 @@
 h = require('../test-helper')
+async = require('async')
 
 config = h.testConfig.databases.mysql
 adapter = null
@@ -53,5 +54,21 @@ describe('Mysql Adapter', () ->
 
 
 
+    execute = (q, cb) ->
+        adapter.execute({
+            stmt: q,
+            onError: cb,
+            onAllRows: (rows) -> cb(null, rows)
+        })
+
+    it('should handle requests in parallel', (done) ->
+        async.parallel({
+            one: (cb) -> execute("SELECT 1", cb)
+            two: (cb) -> execute("SELECT 2", cb)
+            three: (cb) -> execute("SELECT 3", cb)
+        }, (err, results) ->
+            done()
+        )
+    )
     
 )
