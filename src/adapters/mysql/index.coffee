@@ -87,7 +87,7 @@ class MysqlAdapter
             {
                 rowShape: 'array'
                 master: true
-                stmt: "SHOW DATABASES LIKE '#{name}'" #"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '#{name}'"
+                stmt: "SHOW DATABASES LIKE '#{name}'"
                 onAllRows: (row) -> callback(row[0]?)
             }
         )
