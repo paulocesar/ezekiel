@@ -44,6 +44,7 @@ class MysqlAdapter
                     rowShape = options.rowShape ? 'object'
 
                     # TODO: review parse e _typeCast
+                    # search about row structure and SQL bit to JS boolean
                     if(rowShape == 'array')
                         out = (row[k] for k of row)
                     else
@@ -57,7 +58,7 @@ class MysqlAdapter
                     return
                 )
 
-
+            # TODO: call end even if there's a error (LEAK CONNECTION!)
             stmt.on('end', () =>
                 if doAllRows
                     options.onAllRows(rows,options)
@@ -95,7 +96,7 @@ class MysqlAdapter
             {
                 master: true
                 stmt: "CREATE DATABASE IF NOT EXISTS #{name}"
-                onDone: (dn) -> callback(dn)
+                onDone: (dn) -> callback(dn?)
             }
         )
 
@@ -106,7 +107,7 @@ class MysqlAdapter
                 {
                     master: true
                     stmt: "DROP DATABASE IF EXISTS #{name}"
-                    onDone: (dn) -> callback(dn)   
+                    onDone: (dn) -> callback(dn?)   
                 }
             )
         )

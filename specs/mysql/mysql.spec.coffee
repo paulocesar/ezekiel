@@ -57,7 +57,7 @@ describe('Mysql Adapter', () ->
     execute = (q, cb) ->
         adapter.execute({
             stmt: q,
-            onError: cb,
+            onError: (er) -> cb,
             onAllRows: (rows) -> cb(null, rows)
         })
 
