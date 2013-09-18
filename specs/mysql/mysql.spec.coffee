@@ -23,4 +23,11 @@ describe('Mysql Adapter', () ->
         )
     )
 
+    db_name = "test_db_#{Date.now()}"
+    it('should create a database', (done) ->
+        adapter.createDatabase(db_name, (db) ->
+            done()
+        )
+    )
+
 )
