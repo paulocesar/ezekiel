@@ -16,7 +16,7 @@ Database = requireSrc('access/database')
 DbSchema = requireSrc('schema/db-schema')
 
 debug = false
-defaultEngine = 'mssql'
+defaultEngine = 'mysql'
 
 blankDb = () ->
     db = new Database({ database: 'blank' })
