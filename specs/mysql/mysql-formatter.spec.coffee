@@ -1,5 +1,5 @@
 h = require('../test-helper')
-{ SqlExpression, SqlRawName, SqlFullName } = sql = h.requireSrc('sql')
+{ SqlExpression, SqlRawName, SqlFullName, SqlSelect } = sql = h.requireSrc('sql')
 SqlFormatter = h.requireSrc('dialects/mysql/mysql-formatter')
 
 f = new SqlFormatter(h.blankDb())
@@ -13,13 +13,13 @@ describe 'SqlFormatter', () ->
 
     it 'emits SQL names correctly', ->
         multi = sql.name(["Db", "Schema", "Table"])
-        multi.toSql(f).should.eql("[Db].[Schema].[Table]")
+        multi.toSql(f).should.eql("`Db`.`Schema`.`Table`")
 
         noPrefix = sql.name("Users")
-        noPrefix.toSql(f).should.eql("[Users]")
+        noPrefix.toSql(f).should.eql("`Users`")
 
         withPrefix = sql.name("O.Name")
-        withPrefix.toSql(f).should.eql("[O].[Name]")
+        withPrefix.toSql(f).should.eql("`O`.`Name`")
 
     it 'can tell expressions from names', ->
         f.parseNameOrExpression("Qty * Price").should.be.an.instanceOf(SqlExpression)
@@ -35,3 +35,13 @@ describe 'SqlFormatter', () ->
 
         d = new Date(2013, 2, 25, 17, 5, 10, 22)
         f.format(d).should.eql("'2013-03-25 17:05:10.022'")
+
+    it 'should select item', ->
+        expected = "SELECT `name`, `table`.`id` FROM `table`"
+        # sql.select('name','table.id').from('table').toSql(f).should.be.eql(expected)
+
+        expected = "SELECT `firstName` FROM `users` "
+        expected += "WHERE (`age` = 10 AND `lastName` LIKE '%harry%')"
+        sql.select('firstName').from('users').where({age: 10, lastName: '%harry%'})
+            .toSql(f).should.be.eql(expected)
+

@@ -23,13 +23,13 @@ class MysqlFormatter
 
     fullName: (n) ->
         return n.parts
-            .map((s) -> "[#{s}]")
+            .map((s) -> "`#{s}`")
             .join('.')
 
     rawName: (n) ->
         return n.name
             .split('.')
-            .map( (s) -> "[#{s}]" )
+            .map( (s) -> "`#{s}`" )
             .join('.')
 
     parseNameOrExpression: (s) ->
@@ -82,6 +82,64 @@ class MysqlFormatter
         mis = @_numberAppendZero( dt.getMilliseconds(), 3)
 
         return "'#{y}-#{m}-#{d} #{h}:#{min}:#{s}.#{mis}'"
+
+
+    _appendRawNames: (q,separator) ->
+        str = ''
+        firstTime = true
+        for col of q
+            str += separator if !firstTime
+            firstTime = false
+            str += @rawName({name: q[col]})
+        str
+
+    _termToSql: (t) ->
+        if t.op == 'equals'
+            separator = ' = '
+            separator = ' LIKE ' if typeof t.right != 'number'
+            left = @rawName({name: t.left})
+            right = t.right
+            right = "'"+t.right+"'" if typeof t.right != 'number'
+            console.log(left + separator + right)
+            return left + separator + right
+
+    _appendAndTerms: (terms) ->
+        a = []
+        for t of terms
+            a.push(@_termToSql(terms[t]))
+        '(' + a.join(' AND ') + ')'
+
+
+
+    select: (q) ->
+        query = "SELECT "
+
+        if q.columns
+            query += @_appendRawNames(q.columns,', ')
+        
+        if q.tables
+            query += " FROM "   
+            query += @_appendRawNames(q.tables,', ')
+
+        if q.whereClause
+            query += " WHERE "
+            query += @_appendAndTerms(q.whereClause.expr.terms)
+
+        return query;
         
 
 module.exports = MysqlFormatter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
