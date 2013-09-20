@@ -45,8 +45,11 @@ class MysqlAdapter
 
                     # TODO: review parse e _typeCast
                     # search about row structure and SQL bit to JS boolean
+                    out = null
                     if(rowShape == 'array')
-                        out = (row[k] for k of row)
+                        out = []
+                        for k of row
+                            out.push(row[k]) if typeof row[k] != 'function'
                     else
                         out = row
 
@@ -66,10 +69,12 @@ class MysqlAdapter
                 if options.onDone?
                     options.onDone(rows.length)
 
-                @pool.release(conn)
             )
 
             stmt.on('error', fnErr)
+
+            # 'conn.end()' make sure that all queries are correctly finished
+            @pool.release(conn)
 
         )
 
