@@ -70,3 +70,6 @@ describe 'SqlFormatter', () ->
         sql.insert('users', {name: 'Bob Nelson', age: 21}).toSql(f).should.be.eql(expected)
 
 
+    # UPDATE
+
+    

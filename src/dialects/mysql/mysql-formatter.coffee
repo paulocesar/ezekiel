@@ -175,7 +175,9 @@ class MysqlFormatter
 
         query
 
-    # update: (q) ->
+    update: (q) ->
+
+    
         
 
 module.exports = MysqlFormatter
