@@ -90,7 +90,8 @@ class MysqlFormatter
         for col of q
             str += separator if !firstTime
             firstTime = false
-            str += @rawName({name: q[col]})
+            val = q[col].toString()
+            str += @rawName({name: val})
         str
 
     _termToSql: (t) ->
@@ -148,11 +149,31 @@ class MysqlFormatter
         query
 
 
-    # insert: (q) ->
-    #     query = "INSERT INTO "
-    #     console.log(q)
+    _fromArrayToInsertVal: (v) ->
+        vals = ''
+        firstTime = true
+        for d of v
+            vals += ', ' if !firstTime
+            firstTime = false
+            field = v[d]
+            vals += "'#{field}'" if typeof field == 'string'
+            vals += field if typeof field != 'string'
+        vals
 
-    #     query
+
+    insert: (q) ->
+        query = "INSERT INTO "
+
+        if q.targetTable
+            query += @rawName(q.targetTable, ', ')
+
+        fields = Object.keys(q.values)
+
+        query += ' (' + @_appendRawNames(fields,', ') + ')'
+        query += ' VALUES'
+        query += ' (' + @_fromArrayToInsertVal(q.values) + ')'
+
+        query
 
     # update: (q) ->
         

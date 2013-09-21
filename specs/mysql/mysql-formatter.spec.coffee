@@ -66,7 +66,7 @@ describe 'SqlFormatter', () ->
     # INSERT
 
     it 'should return a insert query', ->
-        expected = "INSERT INTO `users` (`name`,`age`) VALUES ('Bob Nelson',21)"
+        expected = "INSERT INTO `users` (`name`, `age`) VALUES ('Bob Nelson', 21)"
         sql.insert('users', {name: 'Bob Nelson', age: 21}).toSql(f).should.be.eql(expected)
 
 
