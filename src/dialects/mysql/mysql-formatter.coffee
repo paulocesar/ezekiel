@@ -1,6 +1,6 @@
 _ = require('underscore')
 sql = require('../../sql')
-{ SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName } = sql
+{ SqlJoin, SqlFrom, SqlToken, SqlRawName, SqlFullName, SqlDelete } = sql
 
 rgxParseName = ///
     ( [^.]+ )   # anything that's not a .
@@ -100,16 +100,20 @@ class MysqlFormatter
             left = @rawName({name: t.left})
             right = t.right
             right = "'"+t.right+"'" if typeof t.right != 'number'
-            console.log(left + separator + right)
             return left + separator + right
 
-    _appendAndTerms: (terms) ->
+    where: (q) ->
+        if q.whereClause.expr.terms
+            terms = q.whereClause.expr.terms
+        else
+            terms = [q.whereClause.expr]
         a = []
         for t of terms
             a.push(@_termToSql(terms[t]))
         '(' + a.join(' AND ') + ')'
 
 
+    _limit: (l) -> " LIMIT " + l
 
     select: (q) ->
         query = "SELECT "
@@ -123,9 +127,28 @@ class MysqlFormatter
 
         if q.whereClause
             query += " WHERE "
-            query += @_appendAndTerms(q.whereClause.expr.terms)
+            query += @where(q)
+
+        if(q.cntTake)
+            query += @_limit(q.cntTake)
 
         return query;
+
+
+    delete: (q) ->
+        query = "DELETE FROM "
+
+        if q.targetTable
+            query += @rawName(q.targetTable, ', ')
+
+        if q.whereClause
+            query += " WHERE "
+            query += @where(q)
+
+        return query;
+
+
+
         
 
 module.exports = MysqlFormatter
