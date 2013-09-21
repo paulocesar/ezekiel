@@ -37,7 +37,6 @@ describe 'SqlFormatter', () ->
         f.format(d).should.eql("'2013-03-25 17:05:10.022'")
 
 
-
     # SELECT
 
     it 'should select item', ->
@@ -49,10 +48,12 @@ describe 'SqlFormatter', () ->
         sql.select('firstName').from('users').where({age: 10, lastName: '%harry%'})
             .toSql(f).should.be.eql(expected)
 
+
+    # LIMIT
+
     it 'should limit the search', ->
         expected = "SELECT `name` FROM `users` LIMIT 5"
         sql.select('name').from('users').limit(5).toSql(f).should.be.eql(expected)
-
 
 
     # DELETE
@@ -62,5 +63,10 @@ describe 'SqlFormatter', () ->
         sql.delete('users').where({age: 10, age2: 20}).toSql(f).should.be.eql(expected)
 
 
+    # INSERT
+
+    it 'should return a insert query', ->
+        expected = "INSERT INTO `users` (`name`,`age`) VALUES ('Bob Nelson',21)"
+        sql.insert('users', {name: 'Bob Nelson', age: 21}).toSql(f).should.be.eql(expected)
 
 

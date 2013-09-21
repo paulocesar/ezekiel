@@ -132,7 +132,7 @@ class MysqlFormatter
         if(q.cntTake)
             query += @_limit(q.cntTake)
 
-        return query;
+        query
 
 
     delete: (q) ->
@@ -145,10 +145,16 @@ class MysqlFormatter
             query += " WHERE "
             query += @where(q)
 
-        return query;
+        query
 
 
+    # insert: (q) ->
+    #     query = "INSERT INTO "
+    #     console.log(q)
 
+    #     query
+
+    # update: (q) ->
         
 
 module.exports = MysqlFormatter
