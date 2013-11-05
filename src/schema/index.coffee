@@ -87,6 +87,7 @@ dbTypeToJsType = {
     varchar: 'string'
     datetime: 'date'
     int: 'number'
+    tinyint: 'number'
 }
 
 class Column extends DbObject
