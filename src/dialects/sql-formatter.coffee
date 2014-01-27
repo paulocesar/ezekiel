@@ -516,6 +516,7 @@ class SqlFormatter
 
         output = @addOutputColumns(ret, stmt.outputColumns)
         if output?
+            ret.unshift(';')
             ret.unshift(output.table)
             ret.push(output.clause)
 
