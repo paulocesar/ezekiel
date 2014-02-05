@@ -6,14 +6,14 @@
     "dependencies": {
         "tds": "git://github.com/cretz/node-tds.git",
         "functoids": "git://github.com/gduarte/functoids.git",
-        "underscore": "",
-        "coffee-script": "",
-        "async": "",
-        "generic-pool": "",
-        "tedious": ""
+        "underscore": "1.5.2",
+        "coffee-script": "1.6.3",
+        "async": "0.2.10",
+        "generic-pool": "2.0.4",
+        "tedious": "0.1.5"
     },
     "devDependencies": {
-        "mocha": "",
-        "should": ""
+        "mocha": "1.17.1",
+        "should": "3.1.2"
     }
 }
