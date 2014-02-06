@@ -300,5 +300,17 @@ class Table extends DbObject
     some: (p) -> _.some(@columns, (c) -> c[p])
     readOnlyProperties: () -> (c.property for c in @columns when c.isReadOnly)
 
+    ignoreForBulk: (columns, ignore) ->
+        if _.isString(columns)
+            columns = [columns]
+
+        F.demandArray(columns, 'columns')
+        F.demandBoolean(ignore, 'ignore')
+
+        _.each(columns, (c) =>
+            F.demandGoodString(c)
+            @columnsByProperty[c]?.ignoreForBulk = ignore
+        )
+
 module.exports = dbObjects.Table = Table
 dbObjects.table = (meta) -> new Table(meta)

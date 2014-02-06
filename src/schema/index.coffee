@@ -100,6 +100,7 @@ class Column extends DbObject
         @isReadOnly = @isIdentity || @isComputed
         @isRequired = !@isNullable
         @property ?= @name
+        @ignoreForBulk = false
 
     canInsert: (v) -> !@getInsertError(v, false)
 

@@ -53,7 +53,7 @@ bulk = {
         columns = []
 
         for c in @table.columns
-            if c.isReadOnly && !key.contains(c)
+            if c.ignoreForBulk || (c.isReadOnly && !key.contains(c))
                 continue
 
             columns.push(c)

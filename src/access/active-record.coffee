@@ -99,6 +99,9 @@ class ActiveRecord
                 return @setAsync(key, values, callback)
         })
 
+    ignoreForBulk: (columns, ignore = true) ->
+        @_schema.ignoreForBulk(columns, ignore)
+
     # SHOULD: merge getAsync() and get()
     getAsync: (key, callback) ->
         F.demandGoodString(key, 'key')
