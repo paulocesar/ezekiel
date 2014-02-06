@@ -206,6 +206,8 @@ class TableGateway
         return cb(msg) if cb?
         return queryBinder.bindError(@, msg)
 
+    ignoreForBulk: (cols, ignore = true) -> @schema.ignoreForBulk(cols, ignore)
+
 Object.defineProperty(TableGateway::, "sqlAlias", {
     get: () -> @schema.many
 })
